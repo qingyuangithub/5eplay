@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5E全平台查询成分</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 配置主题 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FB7299',
+                        secondary: '#3B82F6',
+                        dark: {
+                            bg: '#0F172A',
+                            card: '#1E293B',
+                            border: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Microsoft YaHei', 'Segoe UI', 'SimHei', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-down': 'slideDown 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-in-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow-lg {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .star-glow {
+                text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-gray-100 transition-colors duration-300">
+<!-- 顶部标题栏 -->
+<header class="bg-gradient-to-r from-primary to-secondary text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center">
+            <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-shadow-lg">5E全平台查成分</h1>
+            <button id="themeToggle" class="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-lg flex items-center gap-2">
+                <i class="fa fa-moon-o dark:hidden"></i>
+                <i class="fa fa-sun-o hidden dark:inline-block"></i>
+                <span class="dark:hidden">暗色模式</span>
+                <span class="hidden dark:inline-block">亮色模式</span>
+            </button>
+        </div>
+        <p class="mt-2 opacity-90">快速查询对手的成分</p>
+    </div>
+</header>
+
+<!-- 主内容区 -->
+<main class="container mx-auto px-4 py-8">
+    <!-- 搜索框区域 -->
+    <div id="searchFrame" class="bg-white dark:bg-dark-card rounded-xl shadow-md p-6 mb-8 transition-all duration-300">
+        <div class="flex flex-col md:flex-row gap-4">
+            <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="输入玩家5E昵称"
+                    class="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            >
+            <button
+                    id="searchButton"
+                    class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:-translate-y-1 hover:shadow-lg flex items-center justify-center gap-2"
+            >
+                <i class="fa fa-search"></i>
+                <span>搜索</span>
+            </button>
+        </div>
+
+        <!-- 搜索进度条 -->
+        <div id="searchProgressContainer" class="mt-4 hidden">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">搜索中...</div>
+            <div class="w-full bg-gray-200 dark:bg-dark-border rounded-full h-2.5">
+                <div id="searchProgressBar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- 搜索结果状态 -->
+        <div id="searchStatus" class="mt-4 text-center text-gray-500 dark:text-gray-400 hidden"></div>
+    </div>
+
+    <!-- 结果展示区域 -->
+    <div id="resultsContainer" class="space-y-6"></div>
+
+    <!-- 初始状态提示 -->
+    <div id="initialState" class="text-center py-16 border border-dashed border-gray-200 dark:border-dark-border rounded-xl bg-white dark:bg-dark-card m-4">
+        <i class="fa fa-search text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
+        <p class="text-gray-500 dark:text-gray-400">输入玩家5E昵称 并点击搜索按钮开始查询</p>
+    </div>
+</main>
+
+<!-- 页脚 -->
+<footer class="bg-white dark:bg-dark-card border-t border-gray-200 dark:border-dark-border py-4 mt-12">
+    <div class="container mx-auto px-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+        <p>5E查成分 &copy; 2025 | 数据来源 完美平台 5E平台 Steam平台</p>
+    </div>
+</footer>
+
+<!-- 用户卡片模板 (不显示，用于克隆) -->
+<template id="userCardTemplate">
+    <div class="user-card bg-white dark:bg-dark-card rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+        <div class="p-6">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- 头像区域 -->
+                <div class="flex-shrink-0">
+                    <div class="w-24 h-24 rounded-lg border-2 border-gray-100 dark:border-dark-border overflow-hidden bg-gray-100 dark:bg-dark-border relative">
+                        <img class="avatar w-full h-full object-cover" src="" alt="用户头像" onerror="this.src='https://picsum.photos/200/200?random=1'">
+                        <div class="avatar-placeholder absolute inset-0 flex items-center justify-center text-gray-400">
+                            <i class="fa fa-user-circle-o text-4xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 基本信息区域 -->
+                <div class="flex-1">
+                    <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="score-badge bg-primary/10 text-primary"></span>
+                                <span class="rank-badge"></span>
+                            </div>
+                            <div class="space-y-1 text-sm">
+                                <p><span class="text-gray-500 dark:text-gray-400">5E昵称：</span><span class="pvp-nickname font-medium"></span></p>
+                                <p><span class="text-gray-500 dark:text-gray-400">Steam昵称：</span><span class="app-nickname"></span></p>
+                                <p><span class="text-gray-500 dark:text-gray-400">SteamID：</span><span class="steam-id font-mono text-sm"></span></p>
+                                <!-- 隐藏状态显示 -->
+                                <p class="hidden"><span class="text-gray-500 dark:text-gray-400">状态：</span><span class="online-status"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 封禁状态 -->
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">账号状态</p>
+                        <p class="forbid-info bg-gray-100 dark:bg-dark-card px-3 py-2 rounded text-sm"></p>
+                    </div>
+
+                    <!-- 详情按钮 -->
+                    <button class="detail-btn bg-gray-100 hover:bg-gray-200 dark:bg-dark-border dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 w-full md:w-auto">
+                        <i class="fa fa-info-circle"></i>
+                        <span>查看详情</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 详情区域 -->
+            <div class="details-container mt-6 overflow-hidden max-h-0 transition-all duration-300">
+                <div class="detail-progress-container hidden mb-4">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">加载详情中...</div>
+                    <div class="w-full bg-gray-200 dark:bg-dark-border rounded-full h-2">
+                        <div class="detail-progress-bar bg-primary h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="details-placeholder text-center py-8 text-gray-500 dark:text-gray-400"></div>
+
+                <!-- 账号信息容器 -->
+                <div class="accounts-container hidden space-y-6">
+                    <!-- 5E数据卡片 -->
+                    <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                        <h3 class="font-medium flex items-center gap-2 mb-4">
+                            <span>5E数据</span>
+                            <span class="text-xs bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400 px-2 py-0.5 rounded">5E账号</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">5E昵称</p>
+                                <p class="fivee-name bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">5E注册时间</p>
+                                <p class="fivee-regdate bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">5E信誉分</p>
+                                <p class="fivee-credit bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">5E违规记录</p>
+                                <p class="fivee-report bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                        </div>
+
+                        <div class="stats-container mb-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">5E统计数据</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm">
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">Rating</p>
+                                    <p class="fivee-rating font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">ELO</p>
+                                    <p class="fivee-elo font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">ADR</p>
+                                    <p class="fivee-adr font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">RWS</p>
+                                    <p class="fivee-rws font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Steam数据卡片 -->
+                    <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                        <h3 class="font-medium flex items-center gap-2 mb-4">
+                            <span>Steam数据</span>
+                            <span class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded">Steam账号</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Steam昵称</p>
+                                <p class="steam-name bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">SteamID</p>
+                                <p class="steam-id-detail font-mono text-sm bg-gray-100 dark:bg-dark-card px-2 py-1 rounded"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">注册时间</p>
+                                <p class="steam-regtime bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">社区等级</p>
+                                <p class="steam-level bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                        </div>
+
+                        <div class="stats-container mb-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">Steam状态</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-center text-sm">
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">VAC状态</p>
+                                    <p class="steam-vac font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">交易状态</p>
+                                    <p class="steam-trade font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">游戏数量</p>
+                                    <p class="steam-games font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 完美数据卡片 -->
+                    <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                        <h3 class="font-medium flex items-center gap-2 mb-4">
+                            <span>完美数据</span>
+                            <span class="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">完美账号</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">完美昵称</p>
+                                <p class="perfect-name bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">完美APP昵称</p>
+                                <p class="perfect-app-name bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                             <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">优先状态</p>
+                                <p class="cs-info bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">完美排位分</p>
+                                <p class="perfect-pvp-score bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                            <!-- 新增完美账号状态 -->
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">完美账号状态</p>
+                                <p class="perfect-account-status bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm"></p>
+                            </div>
+                        </div>
+
+                        <div class="stats-container mb-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">完美统计数据</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm">
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">场均击杀</p>
+                                    <p class="avg-kill font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">场均死亡</p>
+                                    <p class="avg-death font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">K/D比</p>
+                                    <p class="kd-ratio font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">最高评分</p>
+                                    <p class="max-rating font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 国服数据 -->
+                        <div class="official-stats-container mb-4">
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">国服数据</p>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-center text-sm">
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">游戏时长</p>
+                                    <p class="play-time font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">胜率</p>
+                                    <p class="win-rate font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">总场次</p>
+                                    <p class="total-matches font-medium"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+    // ==================== 5EPlay API 相关函数 (来自 5Eplay_API.js) ====================
+
+    const imgeshost = 'https://oss-arena.5eplay.com/';
+    const homeHost = 'https://arena.5eplay.com/data/player/';
+
+    const WE_idTransfer = 'https://gate.5eplay.com/userinterface/http/v1/userinterface/idTransfer';//uuid获取接口
+    const WE_home = 'https://gate.5eplay.com/crane/http/api/data/player/home?uuid='; // 用户生涯数据接口
+    const WE_best_season = 'https://gate.5eplay.com/crane/http/api/data/player/best_season?uuid='//用户主页数据接口
+    const WE_macthlist_api = 'https://gate.5eplay.com/crane/http/api/data/match/list'//用户比赛列表接口
+    const WE_match = 'https://gate.5eplay.com/crane/http/api/data/match/'//对局详细接口
+    const WE_userinterface = 'https://gate.5eplay.com/userinterface/pt/v1/userinterface/header/';
+
+    //模式映射表
+    const WE_account_status = {'0':'账户正常','-4':'开挂封禁','-6':'违规行为',}
+
+    //5E接口函数
+    function get_player(keyword) {
+      const targetLink = `https://arena.5eplay.com/api/search/player/1/16?keywords=${keyword}`;
+      const urlo = `https://api.allorigins.win/get?url=${encodeURIComponent(targetLink)}`
+      return fetch(urlo)
+        .then(response => response.json())
+        .then(proxyData => {
+          const JsonData = JSON.parse(proxyData.contents);
+          return JsonData; // 返回解析后的数据，供后续 .then 使用
+        })
+        .catch(error => {
+          console.error('❌ 访问失败：', error);
+          return null; // 错误时返回 null，避免后续报错
+        });
+    }
+
+    function get_uuid(domain) {
+      //获取用户uuid
+      const header_ = {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "zh-cn",
+        "authorization": "",
+        "content-type": "application/json",
+        "sec-ch-ua": "\"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        "x-ca-key": "5eplay",
+        "x-ca-signature": "pm/c+nYSScWXLOYG7WCczBallQAPFsQ+mu3szgvr7xg=",
+        "x-ca-signature-headers": "Accept-Language,Authorization",
+        "x-ca-signature-method": "HmacSHA256"
+      };
+      return fetch(WE_idTransfer, {
+        method: 'POST',
+        headers: header_,
+        body: JSON.stringify({ 'trans': { 'domain': domain } })
+      }).then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+        .then(PostData => {
+          if (PostData && PostData.data && PostData.data.uuid) {
+            return PostData.data.uuid;
+          } else {
+            console.warn('获取 UUID 数据结构异常:', PostData);
+            return '获取失败';
+          }
+        })
+        .catch(error => {
+          console.error('❌ 获取 UUID 失败：', error);
+          return '获取失败';
+        });
+    }
+
+    function get_macthlist(uuid){
+        if (uuid === '获取失败') return Promise.resolve(null);
+        let params = {
+        'match_type':-1,
+        'page':1,
+        'date':0,
+        'start_time':0,
+        'end_time':0,
+        'uuid': uuid,
+        'limit':99999,
+        'cs_type':0,
+        }
+        const queryString = new URLSearchParams(params).toString();
+        const targetUrl = `${WE_macthlist_api}?${queryString}`;
+        return fetch(targetUrl, { method: 'GET' })
+        .then(response => response.json())
+        .then(proxydata=> {
+            if (proxydata && proxydata.data && proxydata.data.length > 0) {
+                return proxydata.data[0].match_id || null;
+            }
+            return null;
+        }).catch(error => {
+            console.error('❌ 获取比赛列表失败：', error);
+            return null;
+        })
+    }
+
+    function get_home(uuid) {
+      if (uuid === '获取失败') return Promise.resolve(null);
+      let homeURL = WE_home + uuid
+      return fetch(homeURL)
+        .then(response => response.json())
+        .then(postData => {
+          if (postData && postData.data && postData.data.season_data && postData.data.season_data["9"]) {
+            return postData.data.season_data["9"];
+          }
+          return null;
+        })
+        .catch(error => {
+          console.error('❌ 获取主页数据失败：', error);
+          return null;
+        });
+    }
+
+    function get_userData(uuid){
+        if (uuid === '获取失败') return Promise.resolve(null);
+        let userinterfaceUrl = WE_userinterface + uuid;
+        return fetch(userinterfaceUrl)
+        .then(response => response.json())
+        .then(postData => {
+            if (postData && postData.data && postData.data.header && postData.data.header.user_data) {
+                return postData.data.header.user_data;
+            }
+            return null;
+        })
+        .catch(error => {
+          console.error('❌ 获取用户状态数据失败：', error);
+          return null;
+        });
+    }
+
+    function get_steamID(matchId, targetUuid) {
+      if (!matchId || targetUuid === '获取失败') return Promise.resolve(null);
+      const targetUrl = `${WE_match}${matchId}`;
+      return fetch(targetUrl)
+        .then(response => response.json())
+        .then(postData => {
+          if (!postData || !postData.data || !postData.data.group_1 || !postData.data.group_2) {
+              return null;
+          }
+          let group = postData.data.group_1.concat(postData.data.group_2);
+          for (let i = 0; i < group.length; i++) {
+            const player = group[i];
+            if (player && player.user_info && player.user_info.user_data && player.user_info.user_data.uuid === targetUuid && player.user_info.user_data.steam && player.user_info.user_data.steam.steamId) {
+              return player.user_info.user_data.steam.steamId;
+            }
+          }
+          return null;
+        })
+        .catch(error => {
+          console.error("❌ 获取 SteamID 失败:", error);
+          return null;
+        });
+    }
+
+    function get_steamData(steamId) {
+        if (!steamId) return Promise.resolve(null);
+        return fetch(`https://download.imagedownloader.online/?url=https://steamrepcn.com/profiles/${steamId}`)
+        .then(response => response.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const listContainer = doc.querySelector('div[class="flex w-full justify-between"]');
+          const avatarContainer = doc.querySelector('div[class="flex px-5"]');
+          const steamNameElement = doc.querySelector('p[class="mb-2 truncate text-4xl font-bold leading-tight"]');
+          if (!listContainer || !avatarContainer || !steamNameElement) {
+              return null;
+          }
+          const listText = listContainer.querySelectorAll('div[class="flex flex-col"]');
+          const SteamifonData = {}
+          SteamifonData['steam_avatar'] = avatarContainer.querySelector('img').src || null;
+          SteamifonData['SteamName'] = steamNameElement.textContent || null;
+          listText.forEach(element => {
+            try {
+              const mlElement = element.querySelector('p[class="ml-2"]');
+              const textElement = element.querySelector('p[class="ml-2 text-gray-400 text-sm"]');
+              if (mlElement && textElement) {
+                  const ml = mlElement.innerText.trim();
+                  const text = textElement.innerText.trim();
+                  SteamifonData[ml] = text;
+              }
+            } catch (e) {}
+          });
+        return SteamifonData;
+        }).catch(error => {
+          console.error("❌ 获取 Steam 数据失败:", error);
+          return null;
+        });
+    }
+
+    //工具(转换时间戳)
+    function convertTimestamp(timestamp) {
+      if (!timestamp) return "未知";
+      const ms = timestamp.toString().length === 10 ? timestamp * 1000 : timestamp;
+      return new Date(ms).toLocaleString('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // ============================================================================
+
+    // ==================== 项目原有功能函数 ====================
+
+    const modeDict = {
+        "全部模式": -1, "天梯组排": -12, "天梯绿色": -120, "官匹pro": 41, "天梯单排": -46, "单排绿色": -460
+    };
+
+    const API_URLS = {
+        getInGameUserSetBySid:"https://appactivity.wmpvp.com/steamcn/app/realtime/getInGameUserSetBySid?steamIds=",
+        SEARCH: "https://appengine.wmpvp.com/steamcn/app/search/user",
+        ACCOUNTS: "https://appengine.wmpvp.com/steamcn/community/user/getNewUserList",
+        FORBID: "https://api.wmpvp.com/api/csgo/home/user/forbid",
+        MATCHES: "https://api.wmpvp.com/api/csgo/home/match/list",
+        STATS: "https://api.wmpvp.com/api/csgo/home/pvp/detailStats",
+        INVENTORY: "https://gwapi.pwesports.cn/appdecoration/steamcn/csgo/decoration/getSteamInventoryPreview",
+        OFFICIAL_STATS: "https://api.wmpvp.com/api/csgo/home/official/detailStats",
+        CSINFO: "https://gwapi.pwesports.cn/appdatacenter/csgo/official/fall/userCsgoInfo",
+        STEAM_DATA: "https://steamrepcn.com/profiles/"
+    };
+
+    const mockUserData = [
+        { 'steamID': '76561199635543601', 'userID': '68387007', 'token': '1c0b48b09462dc1d18a1e73aefd16cf57bde1119' },
+        { 'steamID': '76561199697817037', 'userID': '1022646069', 'token': '8dfa964afe38a638488b66f55b32d601e1a4e79a' }
+    ];
+
+    function getRandomUser() {
+        return mockUserData[Math.floor(Math.random() * mockUserData.length)];
+    }
+
+    function getHeaders(token) {
+        const headers = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "zh-CN,zh;q=0.9",
+            "content-type": "application/json",
+            "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "Referer": "https://csgo.wmpvp.com/",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
+        };
+        if (token) headers["authorization"] = `Bearer ${token}`;
+        return headers;
+    }
+
+    // 根据分数获取段位颜色（与提供的图片匹配）
+    function getRankColor(score) {
+        if (score >= 2800) return "#FFD700"; // S星级 - 金色（带星光效果）
+        else if (score >= 2601) return "#F9B641"; // S - 浅金色
+        else if (score >= 2401) return "#FF7A00"; // A+ - 深橙色
+        else if (score >= 2201) return "#FF5700"; // A - 橙色
+        else if (score >= 2001) return "#D81F26"; // B+ - 深红色
+        else if (score >= 1801) return "#C41E3A"; // B - 红色
+        else if (score >= 1601) return "#9333EA"; // C+ - 深紫色
+        else if (score >= 1301) return "#A020F0"; // C - 紫色
+        else if (score >= 1001) return "#4F70FF"; // D+ - 亮蓝色
+        else if (score >= 0) return "#4A6CF7"; // D - 蓝色
+        return "#808080"; // 未定级 - 灰色
+    }
+
+    // 根据分数获取段位文本（按指定区间划分）
+    function getRankText(score) {
+        if (score >= 2800) {
+            const stars = Math.floor((score - 2800) / 50) + 1;
+            return `S ${'★'.repeat(stars)}`;
+        } else if (score >= 2601) return "S";
+        else if (score >= 2401) return "A+";
+        else if (score >= 2201) return "A";
+        else if (score >= 2001) return "B+";
+        else if (score >= 1801) return "B";
+        else if (score >= 1601) return "C+";
+        else if (score >= 1301) return "C";
+        else if (score >= 1001) return "D+";
+        else if (score >= 0) return "D";
+        return "未定级";
+    }
+
+    // 根据SteamID搜索完美平台用户信息
+    async function searchUsers(steamId) {
+        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
+            return null;
+        }
+        try {
+            const { token } = getRandomUser();
+            const headers = getHeaders(token);
+            const response = await fetch(API_URLS.SEARCH, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    keyword: steamId,
+                    page: 1,
+                    pageSize: 10,
+                    searchType: 1 // 1 表示按 SteamID 搜索
+                })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            // 检查返回数据结构是否符合预期
+            if (data.result) {
+                return data.result[0]; // 返回第一个匹配的用户
+            }
+            return null; // 未找到用户或数据格式不正确
+        } catch (e) {
+            console.error("搜索完美用户错误:", e);
+            return null;
+        }
+    }
+
+    // 获取完美平台账号封禁信息
+    async function getAccountForbidInfo(steamId) {
+        if (!steamId) {
+            return "未知";
+        }
+        try {
+            const { steamID: mySteamId, token } = getRandomUser();
+            const headers = getHeaders(token);
+
+            const response = await fetch(API_URLS.FORBID, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    toSteamId: steamId,
+                    mySteamId: mySteamId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.statusCode === 0 && data.data && data.data.forbidStatus === 1) {
+                return `${data.data.forbidReason} (${data.data.forbidEndTime})`;
+            } else if (data.statusCode === 0) {
+                return "正常";
+            } else {
+                return "查询失败";
+            }
+        } catch (e) {
+            console.error("获取封禁信息错误:", e);
+            return "查询失败";
+        }
+    }
+
+    async function getCsInfo(steamId) {
+        if (!steamId) {
+            return "无法获取优先状态";
+        }
+        try {
+            const { token } = getRandomUser();
+            const params = new URLSearchParams({ steamId: steamId, token: token, darkType: '0' });
+            const response = await fetch(`${API_URLS.CSINFO}?${params.toString()}`, { method: "GET", headers: getHeaders() });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.result && data.result.levelTitle) {
+                return `优先用户 ${data.result.levelTitle}-${data.result.curLevel}级`;
+            }
+            return "非优先用户";
+        } catch (e) {
+            console.error("获取CS信息错误:", e);
+            return "无法获取优先状态";
+        }
+    }
+
+    async function getOfficialStats(steamId) {
+        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
+            return null;
+        }
+        try {
+            const { steamID: mySteamId, token } = getRandomUser();
+            const headers = getHeaders(token);
+            const response = await fetch(API_URLS.OFFICIAL_STATS, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({ toSteamId: steamId, mySteamId: mySteamId, accessToken: token })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.statusCode === 0 && data.data) {
+                if (data.data.playTime) {
+                    data.data.playTimeHours = parseFloat((data.data.playTime / 3600).toFixed(1));
+                }
+                return data.data;
+            }
+            return null;
+        } catch (e) {
+            console.error("获取国服统计错误:", e);
+            return null;
+        }
+    }
+
+    // 获取国服比赛数据
+    async function getAccountMatches(steamId) {
+        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
+            return [];
+        }
+        try {
+            const { steamID: mySteamId, token } = getRandomUser();
+            const headers = getHeaders(token);
+            const response = await fetch(API_URLS.MATCHES, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    mySteamId: mySteamId,
+                    toSteamId: steamId,
+                    csgoSeasonId: "recent",
+                    pvpType: modeDict["全部模式"],
+                    page: 1,
+                    pageSize: 9999,
+                    dataSource: 3
+                })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.statusCode === 0 && data.data && data.data.matchList) {
+                return data.data.matchList;
+            }
+            return [];
+        } catch (e) {
+            console.error("获取比赛数据错误:", e);
+            return [];
+        }
+    }
+
+    // 从 searchUsers 的结果中获取最高评分
+    function getUserMaxScore(perfectUserInfo) {
+        if (!perfectUserInfo || !perfectUserInfo.pvpScore) {
+            return "无数据";
+        }
+        return perfectUserInfo.pvpScore;
+    }
+
+    // ============================================================================
+
+    // ==================== 主搜索与UI渲染函数 ====================
+
+    // 主搜索函数
+    async function performSearch(keyword) {
+        const resultsContainer = document.getElementById('resultsContainer');
+        const searchProgressContainer = document.getElementById('searchProgressContainer');
+        const searchProgressBar = document.getElementById('searchProgressBar');
+        const searchStatus = document.getElementById('searchStatus');
+        const initialState = document.getElementById('initialState');
+
+        resultsContainer.innerHTML = '';
+        searchProgressContainer.classList.remove('hidden');
+        searchProgressBar.style.width = '10%';
+        searchStatus.classList.add('hidden');
+        initialState.classList.add('hidden');
+
+        try {
+            const searchResult = await get_player(keyword);
+            if (!searchResult || !searchResult.data?.user?.list || searchResult.data.user.list.length === 0) {
+                searchStatus.textContent = '未找到匹配的用户';
+                searchStatus.classList.remove('hidden');
+                searchProgressBar.style.width = '100%';
+                return;
+            }
+
+            const users = searchResult.data.user.list;
+            const totalUsers = users.length;
+            searchProgressBar.style.width = '30%';
+
+            for (let i = 0; i < totalUsers; i++) {
+                const user = users[i];
+                console.log(`正在为用户 "${user.username}" (${user.domain}) 获取数据...`);
+
+                const uuid = await get_uuid(user.domain);
+                searchProgressBar.style.width = `${30 + (i / totalUsers) * 15}%`;
+
+                const [matchId, homeData, userData] = await Promise.all([
+                    get_macthlist(uuid),
+                    get_home(uuid),
+                    get_userData(uuid)
+                ]);
+                searchProgressBar.style.width = `${45 + (i / totalUsers) * 15}%`;
+
+                const steamId = await get_steamID(matchId, uuid);
+                const steamData = await get_steamData(steamId);
+                searchProgressBar.style.width = `${60 + (i / totalUsers) * 15}%`;
+
+                // 调用 searchUsers 获取完美平台信息
+                const perfectUserInfo = await searchUsers(steamId);
+
+                // 并发获取其他完美数据，包括账号状态
+                const [csInfo, officialInfo, perfectAccountStatus] = steamId ? await Promise.all([
+                    getCsInfo(steamId),
+                    getOfficialStats(steamId),
+                    getAccountForbidInfo(steamId) // 获取完美账号状态
+                ]) : ["无法获取优先状态", null, "未知"];
+                searchProgressBar.style.width = `${75 + (i / totalUsers) * 15}%`;
+
+                // 格式化用户数据，整合 searchUsers 的结果
+                const maxPvpScore = getUserMaxScore(perfectUserInfo);
+
+                const formattedUser = {
+                    userId: uuid,
+                    pvp_nickname: user.username,
+                    app_nickname: steamData?.SteamName || '未知',
+                    steam_id: steamId || '未知',
+                    pvp_score: homeData?.elo || 0,
+                    avatar: user.avatar_url ? imgeshost + user.avatar_url : '',
+                    // 5E数据
+                    fiveeData: {
+                        regDate: userData ? convertTimestamp(userData.reg_date) : '未知',
+                        creditScore: userData?.credit_score || '未知',
+                        reportCount: userData?.report_count || 0,
+                        rating: homeData?.rating || '0',
+                        elo: homeData?.elo || '0',
+                        adr: homeData?.adr || '0',
+                        rws: homeData?.rws || '0'
+                    },
+                    // Steam数据
+                    steamData: {
+                        name: steamData?.SteamName || '未知',
+                        regTime: steamData?.['Steam 注册时间'] || '未知',
+                        level: steamData?.['Steam 社区等级'] || '未知',
+                        vac: steamData?.['VAC 作弊系统检测'] || '未知',
+                        trade: steamData?.['Steam 交易状态'] || '未知',
+                        games: steamData?.['Steam 游戏数'] || '未知'
+                    },
+                    // 完美数据来自 searchUsers，并增加账号状态
+                    perfectData: {
+                        pvpNickName: perfectUserInfo?.pvpNickName || '未知',
+                        appNickName: perfectUserInfo?.appNickName || '未知',
+                        pvpScore: perfectUserInfo?.pvpScore || '0',
+                        csInfo: csInfo,
+                        maxPvpScore: maxPvpScore,
+                        officialStats: officialInfo || {}, // 国服数据
+                        accountStatus: perfectAccountStatus || '未知' // 完美账号状态
+                    },
+                    // 账号状态 (5E)
+                    accountStatus: userData ? (WE_account_status[userData.account_status] || '未知状态') : '未知状态'
+                };
+
+                // 创建并添加用户卡片
+                const userCard = createUserCard(formattedUser);
+                resultsContainer.appendChild(userCard);
+
+                // 更新进度
+                const progress = 90 + Math.floor((10 * (i + 1)) / totalUsers);
+                searchProgressBar.style.width = `${progress}%`;
+            }
+
+            searchProgressBar.style.width = '100%';
+        } catch (e) {
+            console.error("搜索过程出错:", e);
+            searchStatus.textContent = `搜索过程出错: ${e.message}`;
+            searchStatus.classList.remove('hidden');
+            searchProgressBar.style.width = '100%';
+        }
+    }
+
+    // 创建用户卡片
+    function createUserCard(userData) {
+        const template = document.getElementById('userCardTemplate');
+        const card = document.importNode(template.content, true).querySelector('.user-card');
+
+        // 设置基本信息
+        card.querySelector('.pvp-nickname').textContent = userData.pvp_nickname;
+        card.querySelector('.app-nickname').textContent = userData.app_nickname;
+        card.querySelector('.steam-id').textContent = userData.steam_id;
+        card.querySelector('.forbid-info').textContent = userData.accountStatus; // 显示5E账号状态
+
+        // 设置5E分数和段位
+        const scoreBadge = card.querySelector('.score-badge');
+        const rankBadge = card.querySelector('.rank-badge');
+        const pvpScore = userData.pvp_score;
+        scoreBadge.textContent = `5E排位分: ${pvpScore === 0 ? '未定级' : pvpScore}`;
+        const rankText = getRankText(pvpScore);
+        const rankColor = getRankColor(pvpScore);
+
+        // 应用段位样式
+        rankBadge.innerHTML = rankText; // 使用innerHTML确保星星符号正确显示
+        rankBadge.style.backgroundColor = rankColor;
+        rankBadge.style.color = "#fff";
+        rankBadge.style.padding = "0 6px";
+        rankBadge.style.borderRadius = "4px";
+        rankBadge.style.fontWeight = "bold";
+
+        // 为星级添加特殊发光效果
+        if (rankText.includes('S ')) {
+            rankBadge.classList.add('star-glow');
+        }
+
+        // 设置头像
+        const avatarImg = card.querySelector('.avatar');
+        const avatarPlaceholder = card.querySelector('.avatar-placeholder');
+        if (userData.avatar && userData.avatar.trim() !== '') {
+            avatarImg.src = userData.avatar;
+            avatarImg.onload = () => { avatarPlaceholder.style.display = 'none'; };
+        } else {
+            avatarPlaceholder.style.display = 'flex';
+        }
+
+        // 填充5E数据
+        const fiveeCard = card.querySelector('.accounts-container .account-card:nth-child(1)');
+        fiveeCard.querySelector('.fivee-name').textContent = userData.pvp_nickname;
+        fiveeCard.querySelector('.fivee-regdate').textContent = userData.fiveeData.regDate;
+        fiveeCard.querySelector('.fivee-credit').textContent = userData.fiveeData.creditScore;
+        fiveeCard.querySelector('.fivee-report').textContent = userData.fiveeData.reportCount;
+        fiveeCard.querySelector('.fivee-rating').textContent = userData.fiveeData.rating;
+        fiveeCard.querySelector('.fivee-elo').textContent = userData.fiveeData.elo;
+        fiveeCard.querySelector('.fivee-adr').textContent = userData.fiveeData.adr;
+        fiveeCard.querySelector('.fivee-rws').textContent = userData.fiveeData.rws;
+
+        // 填充Steam数据
+        const steamCard = card.querySelector('.accounts-container .account-card:nth-child(2)');
+        steamCard.querySelector('.steam-name').textContent = userData.steamData.name;
+        steamCard.querySelector('.steam-id-detail').textContent = userData.steam_id;
+        steamCard.querySelector('.steam-regtime').textContent = userData.steamData.regTime;
+        steamCard.querySelector('.steam-level').textContent = userData.steamData.level;
+        steamCard.querySelector('.steam-vac').textContent = userData.steamData.vac;
+        steamCard.querySelector('.steam-trade').textContent = userData.steamData.trade;
+        steamCard.querySelector('.steam-games').textContent = userData.steamData.games;
+
+        // 填充完美数据，使用从 searchUsers 获取的信息，并添加账号状态
+        const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
+        perfectCard.querySelector('.perfect-name').textContent = userData.perfectData.pvpNickName;
+        perfectCard.querySelector('.perfect-app-name').textContent = userData.perfectData.appNickName;
+        perfectCard.querySelector('.cs-info').textContent = userData.perfectData.csInfo;
+        perfectCard.querySelector('.perfect-pvp-score').textContent = userData.perfectData.pvpScore === '0' ? '未定级' : userData.perfectData.pvpScore;
+        perfectCard.querySelector('.max-rating').textContent = userData.perfectData.maxPvpScore;
+        perfectCard.querySelector('.perfect-account-status').textContent = userData.perfectData.accountStatus; // 显示完美账号状态
+
+        // 填充国服数据
+        if (Object.keys(userData.perfectData.officialStats).length > 0) {
+            perfectCard.querySelector('.play-time').textContent =
+                userData.perfectData.officialStats.playTimeHours
+                    ? `${userData.perfectData.officialStats.playTimeHours} 小时`
+                    : '未知';
+
+            perfectCard.querySelector('.win-rate').textContent =
+                userData.perfectData.officialStats.winRate
+                    ? `${userData.perfectData.officialStats.winRate}%`
+                    : '未知';
+
+            perfectCard.querySelector('.total-matches').textContent =
+                userData.perfectData.officialStats.totalMatchNum || '未知';
+        } else {
+            perfectCard.querySelector('.play-time').textContent = '无数据';
+            perfectCard.querySelector('.win-rate').textContent = '无数据';
+            perfectCard.querySelector('.total-matches').textContent = '无数据';
+        }
+
+
+        // 绑定详情按钮事件
+        const detailBtn = card.querySelector('.detail-btn');
+        const detailsContainer = card.querySelector('.details-container');
+        const detailsPlaceholder = card.querySelector('.details-placeholder');
+        const accountsContainer = card.querySelector('.accounts-container');
+        const progressContainer = card.querySelector('.detail-progress-container');
+        const progressBar = card.querySelector('.detail-progress-bar');
+
+        let detailsLoaded = false;
+        let detailsVisible = false;
+
+        detailBtn.addEventListener('click', async () => {
+            if (detailsLoaded) {
+                detailsVisible = !detailsVisible;
+                if (detailsVisible) {
+                    detailsContainer.style.maxHeight = '2000px';
+                    detailBtn.innerHTML = '<i class="fa fa-chevron-up"></i><span>隐藏详情</span>';
+                } else {
+                    detailsContainer.style.maxHeight = '0';
+                    detailBtn.innerHTML = '<i class="fa fa-info-circle"></i><span>查看详情</span>';
+                }
+                return;
+            }
+
+            detailBtn.disabled = true;
+            detailBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i><span>加载中...</span>';
+            detailsPlaceholder.textContent = '正在整理数据，请稍候...';
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+
+            try {
+                for (let i = 0; i < 10; i++) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    progressBar.style.width = `${i * 10}%`;
+                }
+
+                detailsPlaceholder.classList.add('hidden');
+                accountsContainer.classList.remove('hidden');
+                progressBar.style.width = '100%';
+
+                detailsContainer.style.maxHeight = '2000px';
+                detailBtn.innerHTML = '<i class="fa fa-chevron-up"></i><span>隐藏详情</span>';
+                detailsVisible = true;
+            } catch (e) {
+                console.error("加载详情错误:", e);
+                detailsPlaceholder.textContent = `加载详情失败: ${e.message}`;
+                detailsPlaceholder.classList.remove('hidden');
+                accountsContainer.classList.add('hidden');
+            } finally {
+                detailBtn.disabled = false;
+                progressContainer.classList.add('hidden');
+                detailsLoaded = true;
+            }
+        });
+
+        return card;
+    }
+
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        // 搜索按钮点击事件
+        const searchButton = document.getElementById('searchButton');
+        const searchInput = document.getElementById('searchInput');
+
+        searchButton.addEventListener('click', () => {
+            const keyword = searchInput.value.trim();
+            if (keyword) {
+                performSearch(keyword);
+            }
+        });
+
+        // 回车键触发搜索
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const keyword = searchInput.value.trim();
+                if (keyword) {
+                    performSearch(keyword);
+                }
+            }
+        });
+
+        // 主题切换
+        const themeToggle = document.getElementById('themeToggle');
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    });
+</script>
+</body>
+</html>
