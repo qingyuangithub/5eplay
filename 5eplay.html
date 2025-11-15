@@ -167,11 +167,17 @@
                         <p class="forbid-info bg-gray-100 dark:bg-dark-card px-3 py-2 rounded text-sm"></p>
                     </div>
 
-                    <!-- 详情按钮 -->
-                    <button class="detail-btn bg-gray-100 hover:bg-gray-200 dark:bg-dark-border dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 w-full md:w-auto">
-                        <i class="fa fa-info-circle"></i>
-                        <span>查看详情</span>
-                    </button>
+                    <!-- 按钮区域（新增复制按钮） -->
+                    <div class="flex gap-3">
+                        <button class="detail-btn bg-gray-100 hover:bg-gray-200 dark:bg-dark-border dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 w-full md:w-auto">
+                            <i class="fa fa-info-circle"></i>
+                            <span>查看详情</span>
+                        </button>
+                        <button class="copy-btn bg-gray-100 hover:bg-gray-200 dark:bg-dark-border dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 w-full md:w-auto">
+                            <i class="fa fa-copy"></i>
+                            <span>复制信息</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1079,7 +1085,6 @@
         return card;
     }
 
-
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', () => {
         // 搜索按钮点击事件
@@ -1117,6 +1122,39 @@
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 复制用户信息功能
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.copy-btn')) {
+                const card = e.target.closest('.user-card');
+                if (!card) return;
+
+                // 获取需要复制的信息
+                const fiveeName = card.querySelector('.fivee-name')?.textContent || '未提供';
+                const perfectName = card.querySelector('.perfect-name')?.textContent || '未提供';
+                const steamName = card.querySelector('.steam-name')?.textContent || '未提供';
+                const perfectAppName = card.querySelector('.perfect-app-name')?.textContent || '未提供';
+
+                // 格式化复制内容
+                const copyText = `5E昵称: ${fiveeName}  完美昵称: ${perfectName} Steam昵称: ${steamName} 完美APP昵称: ${perfectAppName}`;
+
+                // 执行复制
+                navigator.clipboard.writeText(copyText).then(() => {
+                    // 显示复制成功提示
+                    const copyBtn = e.target.closest('.copy-btn');
+                    const originalHtml = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fa fa-check"></i><span>复制成功!</span>';
+
+                    // 2秒后恢复原文本
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalHtml;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制');
+                });
             }
         });
     });
