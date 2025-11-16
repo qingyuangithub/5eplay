@@ -196,7 +196,7 @@
                 <div class="accounts-container hidden space-y-6">
                     <!-- 5E数据卡片 -->
                     <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
-                    <div class="absolute top-30 left-3 right-3 h-60 bg-contain bg-center bg-no-repeat" style="background-image: url('');"></div>
+                    <div id="we-ban" class="absolute top-30 left-3 right-3 h-60 bg-contain bg-center bg-no-repeat" style="background-image: url('');"></div>
                         <h3 class="font-medium flex items-center gap-2 mb-4">
                             <span>5E数据</span>
                             <span class="text-xs bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400 px-2 py-0.5 rounded">5E账号</span>
@@ -246,6 +246,7 @@
 
                     <!-- Steam数据卡片 -->
                     <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                    <div id="steam-ban" class="absolute top-30 left-3 right-3 h-60 bg-contain bg-center bg-no-repeat" style="background-image: url('');"></div>
                         <h3 class="font-medium flex items-center gap-2 mb-4">
                             <span>Steam数据</span>
                             <span class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded">Steam账号</span>
@@ -291,6 +292,7 @@
 
                     <!-- 完美数据卡片 -->
                     <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                    <div id="perfect-ban" class="absolute top-30 left-3 right-3 h-60 bg-contain bg-center bg-no-repeat" style="background-image: url('');"></div>
                         <h3 class="font-medium flex items-center gap-2 mb-4">
                             <span>完美数据</span>
                             <span class="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded">完美账号</span>
@@ -745,12 +747,18 @@
 
             const data = await response.json();
 
-            if (data.statusCode === 0 && data.data && data.data.forbidStatus === 1) {
-                return `${data.data.forbidReason} (${data.data.forbidEndTime})`;
-            } else if (data.statusCode === 0) {
-                return "正常";
+            if (data.statusCode === 0 && data.data) {
+                const forbidDetail = data.data;
+                if ([0, null, undefined].indexOf(forbidDetail.pwaBanType) === -1) {
+                    const expireDate = timestampToDate(forbidDetail.expireTime);
+                    const createDate = timestampToDate(forbidDetail.createTime);
+                    const desc = forbidDetail.desc || "未说明封禁原因";
+                    return `存在封禁记录\n封禁原因：${desc}\n封禁时间：${createDate}\n解封时间：${expireDate}`;
+                } else {
+                    return "状态正常";
+                }
             } else {
-                return "查询失败";
+                return `封禁查询失败：${data.errorMessage || '未知错误'}`;
             }
         } catch (e) {
             console.error("获取封禁信息错误:", e);
@@ -1018,15 +1026,13 @@
         }
 
         // 填充5E数据
-
         const fiveeCard = card.querySelector('.accounts-container .account-card:nth-child(1)');
-
-        const absolute = card.querySelector('.accounts-container .absolute');
+        const we_absolute = card.querySelector('.accounts-container #we-ban');
         if (userData.accountStatus_ === '0') {
-            absolute.classList.remove('hidden');
+            we_absolute.classList.add('hidden');
         }else{
-            absolute.style.backgroundImage = `url(${statusToImageUrl[userData.accountStatus_]})`;
-            //absolute.classList.add('hidden');
+            we_absolute.style.backgroundImage = `url(${statusToImageUrl[userData.accountStatus_]})`;
+            we_absolute.classList.remove('hidden');
         }
 
         fiveeCard.querySelector('.fivee-name').textContent = userData.pvp_nickname;
@@ -1040,6 +1046,14 @@
 
         // 填充Steam数据
         const steamCard = card.querySelector('.accounts-container .account-card:nth-child(2)');
+        const steam_absolute = card.querySelector('.accounts-container #steam-ban');
+        if (userData.steamData.vac === '正常') {
+            steam_absolute.classList.add('hidden');
+        }else{
+            steam_absolute.style.backgroundImage = `url('ban-imges/vac-ban.png')`;
+            steam_absolute.classList.remove('hidden');
+        }
+
         steamCard.querySelector('.steam-name').textContent = userData.steamData.name;
         steamCard.querySelector('.steam-id-detail').textContent = userData.steam_id;
         steamCard.querySelector('.steam-regtime').textContent = userData.steamData.regTime;
@@ -1050,6 +1064,15 @@
 
         // 填充完美数据，使用从 searchUsers 获取的信息，并添加账号状态
         const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
+        const perfectCard_absolute = card.querySelector('.accounts-container .perfectCard-ban');
+        console.log(userData.perfectData.accountStatus);
+        if (userData.perfectData.accountStatus === '状态正常') {
+            console.log(userData.perfectData.accountStatus);
+            //perfectCard_absolute.classList.add('hidden');
+        }else{
+            perfectCard_absolute.style.backgroundImage = `url('ban-imges/pac-ban.png')`;
+            perfectCard_absolute.classList.remove('hidden');
+        }
         perfectCard.querySelector('.perfect-name').textContent = userData.perfectData.pvpNickName;
         perfectCard.querySelector('.perfect-app-name').textContent = userData.perfectData.appNickName;
         perfectCard.querySelector('.cs-info').textContent = userData.perfectData.csInfo;
