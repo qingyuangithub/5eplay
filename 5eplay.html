@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>5E全平台查询成分</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 配置主题 -->
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
+    <链接 链接="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="样式表">
+    <script src="https://cdn.jsdelivr.net/npm(chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <脚本>
+        尾风.配置 = {
+            暗模式：‘类’，
+            主题：{
                 extend: {
                     colors: {
                         primary: '#FB7299',
@@ -26,16 +26,16 @@
                         sans: ['Microsoft YaHei', 'Segoe UI', 'SimHei', 'sans-serif']
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.3s ease-in-out',
-                        'slide-down': 'slideDown 0.3s ease-in-out',
-                        'slide-up': 'slideUp 0.3s ease-in-out'
+                        '淡入'：'淡入 0.3s ease-in-out'，
+                        'slide-down'：'slideDown 0.3s ease-in-out'，
+                        'slide-up'：'slideUp 0.3s ease-in-out'
                     },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' }
+                    关键帧：{
+                        淡入：{
+                            '0%'：{ 不透明度：'0' }，
+                            '100%': { 不透明度: '1' }
                         },
-                        slideDown: {
+                        滑动显示：{
                             '0%': { transform: 'translateY(-10px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' }
                         },
@@ -49,14 +49,14 @@
         }
     </script>
     <style type="text/tailwindcss">
-        @layer utilities {
+        @层 工具 {
             .content-auto {
-                content-visibility: auto;
+                内容可见性：自动；
             }
             .text-shadow-lg {
                 text-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .star-glow {
+            .星辉 {
                 text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
             }
         }
@@ -1064,7 +1064,7 @@
 
         // 填充完美数据，使用从 searchUsers 获取的信息，并添加账号状态
         const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
-        const perfectCard_absolute = card.querySelector('.accounts-container .perfectCard-ban');
+        const perfectCard_absolute = card.querySelector('.accounts-container #perfectCard-ban');
         console.log(userData.perfectData.accountStatus);
         if (userData.perfectData.accountStatus === '状态正常') {
             console.log(userData.perfectData.accountStatus);
