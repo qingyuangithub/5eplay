@@ -570,7 +570,7 @@
           const listText = listContainer.querySelectorAll('div[class="flex flex-col"]');
           const SteamifonData = {}
           SteamifonData['steam_avatar'] = avatarContainer.querySelector('img').src || null;
-          SteamifonData['SteamName'] = steamNameElement.textContent || null;
+          SteamifonData['SteamName'] = steamNameElement.getAttribute('title') || null;
           listText.forEach(element => {
             try {
               const mlElement = element.querySelector('p[class="ml-2"]');
