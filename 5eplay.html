@@ -5,41 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>5E全平台查询成分</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <链接 链接="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="样式表">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    
-    <脚本>
-        尾风.配置 = {
-            暗模式：‘类’
-            主题：{
-                扩展: {
-                    颜色：{
-                        主要颜色: ''#FB7299',
-                        次要颜色: ''#3B82F6',
-                        暗: {
-                            背景颜色: '#0F172A'
-                            卡牌: '#1E293B'
-                            边框: '#334155'
+    <!-- 配置主题 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FB7299',
+                        secondary: '#3B82F6',
+                        dark: {
+                            bg: '#0F172A',
+                            card: '#1E293B',
+                            border: '#334155'
                         }
-                    }
-                    字体族: {
-                        无衬线字体: ['Microsoft YaHei', 'Segoe UI', 'SimHei', '无衬线字体']
-                    }
-                    动画：{
-                        '淡入'：'淡入 0.3s ease-in-out'
-                        'slide-down'：'slideDown 0.3s ease-in-out'
-                        'slide-up'：'slideUp 0.3s ease-in-out'
-                    }
-                    关键帧：{
-                        淡入：{
-                            '0%': { 不透明度: '0' },
-                            '100%': { 不透明度: '1' }
-                        }
-                        滑动显示：{
+                    },
+                    fontFamily: {
+                        sans: ['Microsoft YaHei', 'Segoe UI', 'SimHei', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-down': 'slideDown 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-in-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideDown: {
                             '0%': { transform: 'translateY(-10px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' }
-                        }
-                        滑动隐藏：{
+                        },
+                        slideUp: {
                             '0%': { transform: 'translateY(10px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' }
                         }
@@ -47,16 +47,16 @@
                 }
             }
         }
-    </脚本>
-    <样式 类型="text/tailwindcss">
-        @层 工具
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
             .content-auto {
-                内容可见性：自动；
+                content-visibility: auto;
             }
             .text-shadow-lg {
                 text-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .星辉 {
+            .star-glow {
                 text-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
             }
         }
