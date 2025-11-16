@@ -1047,7 +1047,7 @@
         // 填充Steam数据
         const steamCard = card.querySelector('.accounts-container .account-card:nth-child(2)');
         const steam_absolute = card.querySelector('.accounts-container #steam-ban');
-        if (userData.steamData.vac === '正常') {
+        if (userData.steamData.vac === '正常' || '未知') {
             steam_absolute.classList.add('hidden');
         }else{
             steam_absolute.style.backgroundImage = `url('ban-imges/vac-ban.png')`;
@@ -1064,9 +1064,9 @@
 
         // 填充完美数据，使用从 searchUsers 获取的信息，并添加账号状态
         const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
-        const perfectCard_absolute = card.querySelector('.accounts-container #perfectCard-ban');
+        const perfectCard_absolute = card.querySelector('.accounts-container #perfect-ban');
         console.log(userData.perfectData.accountStatus);
-        if (userData.perfectData.accountStatus === '状态正常') {
+        if (userData.perfectData.accountStatus === '状态正常' || '未知') {
             console.log(userData.perfectData.accountStatus);
             //perfectCard_absolute.classList.add('hidden');
         }else{
@@ -1103,7 +1103,7 @@
         } else {
             perfectCard.querySelector('.play-time').textContent = '[N/A]';
             perfectCard.querySelector('.win-rate').textContent = '[N/A]';
-            perfectCard.querySelector('.kd').textContent = '[N/A]';
+            perfectCard.querySelector('.kd-off').textContent = '[N/A]';
         }
 
 
