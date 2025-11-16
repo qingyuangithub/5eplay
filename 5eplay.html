@@ -196,6 +196,7 @@
                 <div class="accounts-container hidden space-y-6">
                     <!-- 5E数据卡片 -->
                     <div class="account-card bg-gray-50 dark:bg-dark-bg rounded-lg p-4 border border-gray-100 dark:border-dark-border">
+                    <div class="absolute top-30 left-3 right-3 h-60 bg-contain bg-center bg-no-repeat" style="background-image: url('');"></div>
                         <h3 class="font-medium flex items-center gap-2 mb-4">
                             <span>5E数据</span>
                             <span class="text-xs bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400 px-2 py-0.5 rounded">5E账号</span>
@@ -354,8 +355,28 @@
                                     <p class="win-rate font-medium"></p>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
-                                    <p class="text-gray-500 dark:text-gray-400">总场次</p>
-                                    <p class="total-matches font-medium"></p>
+                                    <p class="text-gray-500 dark:text-gray-400">爆头率</p>
+                                    <p class="headShotRatio-off font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">存活率</p>
+                                    <p class="kast-off font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">kd</p>
+                                    <p class="kd-off font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">Rating</p>
+                                    <p class="rating-off font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">ADR</p>
+                                    <p class="ADR-off font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">Rws</p>
+                                    <p class="Rws-off font-medium"></p>
                                 </div>
                             </div>
                         </div>
@@ -381,6 +402,15 @@
 
     //模式映射表
     const WE_account_status = {'0':'账户正常','-4':'开挂封禁','-6':'违规行为',}
+
+    const statusToImageUrl = {
+    '-2': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_illegality_ban.png',   // 非法行为
+    '-4': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_cheating_ban.png',       // 作弊行为
+    '-5': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_cheating_association_ban.png',  // 作弊关联行为
+    '-6': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_unlawful_act_ban.png',  // 违规行为
+    '-7': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_malicious_act_ban.png',  // 恶意行为
+    '-8': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_risk_ban.png'           // 风险行为
+    };
 
     //5E接口函数
     function get_player(keyword) {
@@ -590,8 +620,9 @@
     };
 
     const mockUserData = [
-        { 'steamID': '76561199635543601', 'userID': '68387007', 'token': '1c0b48b09462dc1d18a1e73aefd16cf57bde1119' },
-        { 'steamID': '76561199697817037', 'userID': '1022646069', 'token': '8dfa964afe38a638488b66f55b32d601e1a4e79a' }
+        { 'steamID': '76561199721184339', 'userID': '1026293222', 'token': '7667e792473259e7e40cd7658b1681a0d2a7ce6c' },
+        { 'steamID': '76561199697817037', 'userID': '1022646069', 'token': '8dfa964afe38a638488b66f55b32d601e1a4e79a' },
+        {'steamID': '76561199722026486', 'userID': '1026158310', 'token': '69b506ce5b3be3ba49622305851baf2b72df1ed1'}
     ];
 
     function getRandomUser() {
@@ -610,10 +641,18 @@
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-site",
             "Referer": "https://csgo.wmpvp.com/",
+            'appversion': '3.6.2.189',
+            'device': 'KGPSz1754474645YpsvmPeeMtb',
+            'gameType': '2',
+            'gameTypeStr': '2',
+            'platform': 'android',
+            'appTheme': '0',
+            'Connection': 'Keep-Alive',
+            'Accept-Encoding': 'gzip',
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
         };
-        if (token) headers["authorization"] = `Bearer ${token}`;
+        if (token) headers["token"] = `${token}`;
         return headers;
     }
 
@@ -742,6 +781,7 @@
     }
 
     async function getOfficialStats(steamId) {
+        //获取国服数据
         if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
             return null;
         }
@@ -913,7 +953,8 @@
                         accountStatus: perfectAccountStatus || '未知' // 完美账号状态
                     },
                     // 账号状态 (5E)
-                    accountStatus: userData ? (WE_account_status[userData.account_status] || '未知状态') : '未知状态'
+                    accountStatus: userData ? (WE_account_status[userData.account_status] || '未知状态') : '未知状态',
+                    accountStatus_: userData.account_status
                 };
 
                 // 创建并添加用户卡片
@@ -977,7 +1018,17 @@
         }
 
         // 填充5E数据
+
         const fiveeCard = card.querySelector('.accounts-container .account-card:nth-child(1)');
+
+        const absolute = card.querySelector('.accounts-container .absolute');
+        if (userData.accountStatus_ === '0') {
+            absolute.classList.remove('hidden');
+        }else{
+            absolute.style.backgroundImage = `url(${statusToImageUrl[userData.accountStatus_]})`;
+            //absolute.classList.add('hidden');
+        }
+
         fiveeCard.querySelector('.fivee-name').textContent = userData.pvp_nickname;
         fiveeCard.querySelector('.fivee-regdate').textContent = userData.fiveeData.regDate;
         fiveeCard.querySelector('.fivee-credit').textContent = userData.fiveeData.creditScore;
@@ -1009,21 +1060,27 @@
         // 填充国服数据
         if (Object.keys(userData.perfectData.officialStats).length > 0) {
             perfectCard.querySelector('.play-time').textContent =
-                userData.perfectData.officialStats.playTimeHours
-                    ? `${userData.perfectData.officialStats.playTimeHours} 小时`
+                userData.perfectData.officialStats.hours
+                    ? `${userData.perfectData.officialStats.hours} 小时`
                     : '未知';
 
             perfectCard.querySelector('.win-rate').textContent =
                 userData.perfectData.officialStats.winRate
-                    ? `${userData.perfectData.officialStats.winRate}%`
+                    ? `${userData.perfectData.officialStats.winRate * 100}%`
                     : '未知';
 
-            perfectCard.querySelector('.total-matches').textContent =
-                userData.perfectData.officialStats.totalMatchNum || '未知';
+            perfectCard.querySelector('.kd-off').textContent = userData.perfectData.officialStats.kd;
+                userData.perfectData.officialStats.totalMatchNum || '[N/A]';
+
+            perfectCard.querySelector('.rating-off').textContent = userData.perfectData.officialStats.rating || '[N/A]';
+            perfectCard.querySelector('.headShotRatio-off').textContent = userData.perfectData.officialStats.headShotRatio || '[N/A]';//爆头率
+            perfectCard.querySelector('.ADR-off').textContent = userData.perfectData.officialStats.adr || '[N/A]';
+            perfectCard.querySelector('.kast-off').textContent = `${userData.perfectData.officialStats.kast}%` || '[N/A]';
+            perfectCard.querySelector('.Rws-off').textContent = userData.perfectData.officialStats.rws || '[N/A]';
         } else {
-            perfectCard.querySelector('.play-time').textContent = '无数据';
-            perfectCard.querySelector('.win-rate').textContent = '无数据';
-            perfectCard.querySelector('.total-matches').textContent = '无数据';
+            perfectCard.querySelector('.play-time').textContent = '[N/A]';
+            perfectCard.querySelector('.win-rate').textContent = '[N/A]';
+            perfectCard.querySelector('.kd').textContent = '[N/A]';
         }
 
 
