@@ -861,6 +861,13 @@
         return perfectUserInfo.pvpScore;
     }
 
+    // 时间戳转换函数 (原代码中缺失)
+    function timestampToDate(timestamp) {
+        if (!timestamp) return "未知";
+        const date = new Date(timestamp);
+        return date.toLocaleString();
+    }
+
     // ============================================================================
 
     // ==================== 主搜索与UI渲染函数 ====================
@@ -880,6 +887,7 @@
         initialState.classList.add('hidden');
 
         try {
+            // 步骤 1: 只获取基础的用户列表
             const searchResult = await get_player(keyword);
             if (!searchResult || !searchResult.data?.user?.list || searchResult.data.user.list.length === 0) {
                 searchStatus.textContent = '未找到匹配的用户';
@@ -890,88 +898,35 @@
 
             const users = searchResult.data.user.list;
             const totalUsers = users.length;
-            searchProgressBar.style.width = '30%';
+            searchProgressBar.style.width = `${90}%`; // 快速完成进度条，因为后续数据懒加载
 
             for (let i = 0; i < totalUsers; i++) {
                 const user = users[i];
-                console.log(`正在为用户 "${user.username}" (${user.domain}) 获取数据...`);
+                console.log(`正在为用户 "${user.username}" 创建基础卡片...`);
 
+                // 步骤 2: 只为创建基础卡片获取必要的最小数据
                 const uuid = await get_uuid(user.domain);
-                searchProgressBar.style.width = `${30 + (i / totalUsers) * 15}%`;
+                const userData = await get_userData(uuid);
 
-                const [matchId, homeData, userData] = await Promise.all([
-                    get_macthlist(uuid),
-                    get_home(uuid),
-                    get_userData(uuid)
-                ]);
-                searchProgressBar.style.width = `${45 + (i / totalUsers) * 15}%`;
-
-                const steamId = await get_steamID(matchId, uuid);
-                const steamData = await get_steamData(steamId);
-                searchProgressBar.style.width = `${60 + (i / totalUsers) * 15}%`;
-
-                // 调用 searchUsers 获取完美平台信息
-                const perfectUserInfo = await searchUsers(steamId);
-
-                // 并发获取其他完美数据，包括账号状态
-                const [csInfo, officialInfo, perfectAccountStatus] = steamId ? await Promise.all([
-                    getCsInfo(steamId),
-                    getOfficialStats(steamId),
-                    getAccountForbidInfo(steamId) // 获取完美账号状态
-                ]) : ["无法获取优先状态", null, "未知"];
-                searchProgressBar.style.width = `${75 + (i / totalUsers) * 15}%`;
-
-                // 格式化用户数据，整合 searchUsers 的结果
-                const maxPvpScore = getUserMaxScore(perfectUserInfo);
-
+                // 步骤 3: 创建简化的用户对象，只包含基础信息
                 const formattedUser = {
                     userId: uuid,
                     pvp_nickname: user.username,
-                    app_nickname: steamData?.SteamName || '未知',
-                    steam_id: steamId || '未知',
-                    pvp_score: homeData?.elo || 0,
+                    app_nickname: '点击查看详情', // 占位
+                    steam_id: '点击查看详情',     // 占位
+                    pvp_score: 0, // 占位
                     avatar: user.avatar_url ? imgeshost + user.avatar_url : '',
-                    // 5E数据
-                    fiveeData: {
-                        regDate: userData ? convertTimestamp(userData.reg_date) : '未知',
-                        creditScore: userData?.credit_score || '未知',
-                        reportCount: userData?.report_count || 0,
-                        rating: homeData?.rating || '0',
-                        elo: homeData?.elo || '0',
-                        adr: homeData?.adr || '0',
-                        rws: homeData?.rws || '0'
-                    },
-                    // Steam数据
-                    steamData: {
-                        name: steamData?.SteamName || '未知',
-                        regTime: steamData?.['Steam 注册时间'] || '未知',
-                        level: steamData?.['Steam 社区等级'] || '未知',
-                        vac: steamData?.['VAC 作弊系统检测'] || '未知',
-                        trade: steamData?.['Steam 交易状态'] || '未知',
-                        games: steamData?.['Steam 游戏数'] || '未知'
-                    },
-                    // 完美数据来自 searchUsers，并增加账号状态
-                    perfectData: {
-                        pvpNickName: perfectUserInfo?.pvpNickName || '未知',
-                        appNickName: perfectUserInfo?.appNickName || '未知',
-                        pvpScore: perfectUserInfo?.pvpScore || '0',
-                        csInfo: csInfo,
-                        maxPvpScore: maxPvpScore,
-                        officialStats: officialInfo || {}, // 国服数据
-                        accountStatus: perfectAccountStatus || '未知' // 完美账号状态
-                    },
-                    // 账号状态 (5E)
-                    accountStatus: userData ? (WE_account_status[userData.account_status] || '未知状态') : '未知状态',
-                    accountStatus_: userData.account_status
+                    // 存储原始数据供后续使用
+                    _raw: {
+                        user: user,
+                        uuid: uuid,
+                        userData: userData
+                    }
                 };
 
-                // 创建并添加用户卡片
+                // 步骤 4: 创建并添加用户卡片
                 const userCard = createUserCard(formattedUser);
                 resultsContainer.appendChild(userCard);
-
-                // 更新进度
-                const progress = 90 + Math.floor((10 * (i + 1)) / totalUsers);
-                searchProgressBar.style.width = `${progress}%`;
             }
 
             searchProgressBar.style.width = '100%';
@@ -988,29 +943,31 @@
         const template = document.getElementById('userCardTemplate');
         const card = document.importNode(template.content, true).querySelector('.user-card');
 
-        // 设置基本信息
-        card.querySelector('.pvp-nickname').textContent = userData.pvp_nickname;
+        // 设置基础信息
+        const rawUser = userData._raw.user;
+        const rawUserData = userData._raw.userData;
+
+        card.querySelector('.pvp-nickname').textContent = rawUser.username;
         card.querySelector('.app-nickname').textContent = userData.app_nickname;
         card.querySelector('.steam-id').textContent = userData.steam_id;
-        card.querySelector('.forbid-info').textContent = userData.accountStatus; // 显示5E账号状态
+        
+        // 账号状态
+        const accountStatusText = rawUserData ? (WE_account_status[rawUserData.account_status] || '未知状态') : '未知状态';
+        card.querySelector('.forbid-info').textContent = accountStatusText;
 
-        // 设置5E分数和段位
+        // 设置5E分数和段位 (占位)
         const scoreBadge = card.querySelector('.score-badge');
         const rankBadge = card.querySelector('.rank-badge');
         const pvpScore = userData.pvp_score;
-        scoreBadge.textContent = `5E排位分: ${pvpScore === 0 ? '未定级' : pvpScore}`;
+        scoreBadge.textContent = `5E排位分: ${pvpScore === 0 ? '点击查看' : pvpScore}`;
         const rankText = getRankText(pvpScore);
         const rankColor = getRankColor(pvpScore);
-
-        // 应用段位样式
-        rankBadge.innerHTML = rankText; // 使用innerHTML确保星星符号正确显示
+        rankBadge.innerHTML = rankText;
         rankBadge.style.backgroundColor = rankColor;
         rankBadge.style.color = "#fff";
         rankBadge.style.padding = "0 6px";
         rankBadge.style.borderRadius = "4px";
         rankBadge.style.fontWeight = "bold";
-
-        // 为星级添加特殊发光效果
         if (rankText.includes('S ')) {
             rankBadge.classList.add('star-glow');
         }
@@ -1024,90 +981,8 @@
         } else {
             avatarPlaceholder.style.display = 'flex';
         }
-
-        // 填充5E数据
-        const fiveeCard = card.querySelector('.accounts-container .account-card:nth-child(1)');
-        const we_absolute = card.querySelector('.accounts-container #we-ban');
-        if (userData.accountStatus_ === '0') {
-            we_absolute.classList.add('hidden');
-        }else{
-            we_absolute.style.backgroundImage = `url(${statusToImageUrl[userData.accountStatus_]})`;
-            we_absolute.classList.remove('hidden');
-        }
-
-        fiveeCard.querySelector('.fivee-name').textContent = userData.pvp_nickname;
-        fiveeCard.querySelector('.fivee-regdate').textContent = userData.fiveeData.regDate;
-        fiveeCard.querySelector('.fivee-credit').textContent = userData.fiveeData.creditScore;
-        fiveeCard.querySelector('.fivee-report').textContent = userData.fiveeData.reportCount;
-        fiveeCard.querySelector('.fivee-rating').textContent = userData.fiveeData.rating;
-        fiveeCard.querySelector('.fivee-elo').textContent = userData.fiveeData.elo;
-        fiveeCard.querySelector('.fivee-adr').textContent = userData.fiveeData.adr;
-        fiveeCard.querySelector('.fivee-rws').textContent = userData.fiveeData.rws;
-
-        // 填充Steam数据
-        const steamCard = card.querySelector('.accounts-container .account-card:nth-child(2)');
-        const steam_absolute = card.querySelector('.accounts-container #steam-ban');
-        if (userData.steamData.vac === '正常' || '未知') {
-            steam_absolute.classList.add('hidden');
-        }else{
-            steam_absolute.style.backgroundImage = `url('ban-imges/vac-ban.png')`;
-            steam_absolute.classList.remove('hidden');
-        }
-
-        steamCard.querySelector('.steam-name').textContent = userData.steamData.name;
-        steamCard.querySelector('.steam-id-detail').textContent = userData.steam_id;
-        steamCard.querySelector('.steam-regtime').textContent = userData.steamData.regTime;
-        steamCard.querySelector('.steam-level').textContent = userData.steamData.level;
-        steamCard.querySelector('.steam-vac').textContent = userData.steamData.vac;
-        steamCard.querySelector('.steam-trade').textContent = userData.steamData.trade;
-        steamCard.querySelector('.steam-games').textContent = userData.steamData.games;
-
-        // 填充完美数据，使用从 searchUsers 获取的信息，并添加账号状态
-        const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
-        const perfectCard_absolute = card.querySelector('.accounts-container #perfect-ban');
-        console.log(userData.perfectData.accountStatus);
-        if (userData.perfectData.accountStatus === '状态正常' || '未知') {
-            console.log(userData.perfectData.accountStatus);
-            //perfectCard_absolute.classList.add('hidden');
-        }else{
-            perfectCard_absolute.style.backgroundImage = `url('ban-imges/pac-ban.png')`;
-            perfectCard_absolute.classList.remove('hidden');
-        }
-        perfectCard.querySelector('.perfect-name').textContent = userData.perfectData.pvpNickName;
-        perfectCard.querySelector('.perfect-app-name').textContent = userData.perfectData.appNickName;
-        perfectCard.querySelector('.cs-info').textContent = userData.perfectData.csInfo;
-        perfectCard.querySelector('.perfect-pvp-score').textContent = userData.perfectData.pvpScore === '0' ? '未定级' : userData.perfectData.pvpScore;
-        perfectCard.querySelector('.max-rating').textContent = userData.perfectData.maxPvpScore;
-        perfectCard.querySelector('.perfect-account-status').textContent = userData.perfectData.accountStatus; // 显示完美账号状态
-
-        // 填充国服数据
-        if (Object.keys(userData.perfectData.officialStats).length > 0) {
-            perfectCard.querySelector('.play-time').textContent =
-                userData.perfectData.officialStats.hours
-                    ? `${userData.perfectData.officialStats.hours} 小时`
-                    : '未知';
-
-            perfectCard.querySelector('.win-rate').textContent =
-                userData.perfectData.officialStats.winRate
-                    ? `${userData.perfectData.officialStats.winRate * 100}%`
-                    : '未知';
-
-            perfectCard.querySelector('.kd-off').textContent = userData.perfectData.officialStats.kd;
-                userData.perfectData.officialStats.totalMatchNum || '[N/A]';
-
-            perfectCard.querySelector('.rating-off').textContent = userData.perfectData.officialStats.rating || '[N/A]';
-            perfectCard.querySelector('.headShotRatio-off').textContent = userData.perfectData.officialStats.headShotRatio || '[N/A]';//爆头率
-            perfectCard.querySelector('.ADR-off').textContent = userData.perfectData.officialStats.adr || '[N/A]';
-            perfectCard.querySelector('.kast-off').textContent = `${userData.perfectData.officialStats.kast}%` || '[N/A]';
-            perfectCard.querySelector('.Rws-off').textContent = userData.perfectData.officialStats.rws || '[N/A]';
-        } else {
-            perfectCard.querySelector('.play-time').textContent = '[N/A]';
-            perfectCard.querySelector('.win-rate').textContent = '[N/A]';
-            perfectCard.querySelector('.kd-off').textContent = '[N/A]';
-        }
-
-
-        // 绑定详情按钮事件
+        
+        // 绑定详情按钮事件 - 核心修改点
         const detailBtn = card.querySelector('.detail-btn');
         const detailsContainer = card.querySelector('.details-container');
         const detailsPlaceholder = card.querySelector('.details-placeholder');
@@ -1118,8 +993,174 @@
         let detailsLoaded = false;
         let detailsVisible = false;
 
+        // 填充详情数据的函数
+        const fillCardDetails = async () => {
+            const uuid = userData._raw.uuid;
+            const rawUser = userData._raw.user;
+            const rawUserData = userData._raw.userData;
+
+            // 并行获取所有详细数据
+            const [matchId, homeData] = await Promise.all([
+                get_macthlist(uuid),
+                get_home(uuid)
+            ]);
+
+            const steamId = await get_steamID(matchId, uuid);
+            const steamData = await get_steamData(steamId);
+
+            // 获取完美平台信息
+            const perfectUserInfo = await searchUsers(steamId);
+            const [csInfo, officialInfo, perfectAccountStatus] = steamId ? await Promise.all([
+                getCsInfo(steamId),
+                getOfficialStats(steamId),
+                getAccountForbidInfo(steamId)
+            ]) : ["无法获取优先状态", null, "未知"];
+
+            // 格式化完整的用户数据
+            const maxPvpScore = getUserMaxScore(perfectUserInfo);
+            const fullUserData = {
+                userId: uuid,
+                pvp_nickname: rawUser.username,
+                app_nickname: steamData?.SteamName || '未知',
+                steam_id: steamId || '未知',
+                pvp_score: homeData?.elo || 0,
+                avatar: rawUser.avatar_url ? imgeshost + rawUser.avatar_url : '',
+                // 5E数据
+                fiveeData: {
+                    regDate: rawUserData ? convertTimestamp(rawUserData.reg_date) : '未知',
+                    creditScore: rawUserData?.credit_score || '未知',
+                    reportCount: rawUserData?.report_count || 0,
+                    rating: homeData?.rating || '0',
+                    elo: homeData?.elo || '0',
+                    adr: homeData?.adr || '0',
+                    rws: homeData?.rws || '0'
+                },
+                // Steam数据
+                steamData: {
+                    name: steamData?.SteamName || '未知',
+                    regTime: steamData?.['Steam 注册时间'] || '未知',
+                    level: steamData?.['Steam 社区等级'] || '未知',
+                    vac: steamData?.['VAC 作弊系统检测'] || '未知',
+                    trade: steamData?.['Steam 交易状态'] || '未知',
+                    games: steamData?.['Steam 游戏数'] || '未知'
+                },
+                // 完美数据
+                perfectData: {
+                    pvpNickName: perfectUserInfo?.pvpNickName || '未知',
+                    appNickName: perfectUserInfo?.appNickName || '未知',
+                    pvpScore: perfectUserInfo?.pvpScore || '0',
+                    csInfo: csInfo,
+                    maxPvpScore: maxPvpScore,
+                    officialStats: officialInfo || {},
+                    accountStatus: perfectAccountStatus || '未知'
+                },
+                // 账号状态
+                accountStatus: rawUserData ? (WE_account_status[rawUserData.account_status] || '未知状态') : '未知状态',
+                accountStatus_: rawUserData?.account_status
+            };
+
+            // 更新卡片的基础信息
+            card.querySelector('.app-nickname').textContent = fullUserData.app_nickname;
+            card.querySelector('.steam-id').textContent = fullUserData.steam_id;
+            
+            // 更新5E分数和段位
+            const newPvpScore = fullUserData.pvp_score;
+            scoreBadge.textContent = `5E排位分: ${newPvpScore === 0 ? '未定级' : newPvpScore}`;
+            const newRankText = getRankText(newPvpScore);
+            const newRankColor = getRankColor(newPvpScore);
+            rankBadge.innerHTML = newRankText;
+            rankBadge.style.backgroundColor = newRankColor;
+            if (newRankText.includes('S ')) {
+                rankBadge.classList.add('star-glow');
+            } else {
+                rankBadge.classList.remove('star-glow');
+            }
+
+            // 填充5E数据
+            const fiveeCard = card.querySelector('.accounts-container .account-card:nth-child(1)');
+            const we_absolute = card.querySelector('#we-ban');
+            if (fullUserData.accountStatus_ === '0' || !fullUserData.accountStatus_) {
+                we_absolute.classList.add('hidden');
+            } else {
+                we_absolute.style.backgroundImage = `url(${statusToImageUrl[fullUserData.accountStatus_] || ''})`;
+                we_absolute.classList.remove('hidden');
+            }
+            fiveeCard.querySelector('.fivee-name').textContent = fullUserData.pvp_nickname;
+            fiveeCard.querySelector('.fivee-regdate').textContent = fullUserData.fiveeData.regDate;
+            fiveeCard.querySelector('.fivee-credit').textContent = fullUserData.fiveeData.creditScore;
+            fiveeCard.querySelector('.fivee-report').textContent = fullUserData.fiveeData.reportCount;
+            fiveeCard.querySelector('.fivee-rating').textContent = fullUserData.fiveeData.rating;
+            fiveeCard.querySelector('.fivee-elo').textContent = fullUserData.fiveeData.elo;
+            fiveeCard.querySelector('.fivee-adr').textContent = fullUserData.fiveeData.adr;
+            fiveeCard.querySelector('.fivee-rws').textContent = fullUserData.fiveeData.rws;
+
+            // 填充Steam数据
+            const steamCard = card.querySelector('.accounts-container .account-card:nth-child(2)');
+            const steam_absolute = card.querySelector('#steam-ban');
+            if (fullUserData.steamData.vac === '正常' || fullUserData.steamData.vac === '未知') {
+                steam_absolute.classList.add('hidden');
+            } else {
+                steam_absolute.style.backgroundImage = `url('ban-imges/vac-ban.png')`;
+                steam_absolute.classList.remove('hidden');
+            }
+            steamCard.querySelector('.steam-name').textContent = fullUserData.steamData.name;
+            steamCard.querySelector('.steam-id-detail').textContent = fullUserData.steam_id;
+            steamCard.querySelector('.steam-regtime').textContent = fullUserData.steamData.regTime;
+            steamCard.querySelector('.steam-level').textContent = fullUserData.steamData.level;
+            steamCard.querySelector('.steam-vac').textContent = fullUserData.steamData.vac;
+            steamCard.querySelector('.steam-trade').textContent = fullUserData.steamData.trade;
+            steamCard.querySelector('.steam-games').textContent = fullUserData.steamData.games;
+
+            // 填充完美数据
+            const perfectCard = card.querySelector('.accounts-container .account-card:nth-child(3)');
+            const perfectCard_absolute = card.querySelector('#perfect-ban');
+            if (fullUserData.perfectData.accountStatus === '状态正常' || fullUserData.perfectData.accountStatus === '未知') {
+                perfectCard_absolute.classList.add('hidden');
+            } else {
+                perfectCard_absolute.style.backgroundImage = `url('ban-imges/pac-ban.png')`;
+                perfectCard_absolute.classList.remove('hidden');
+            }
+            perfectCard.querySelector('.perfect-name').textContent = fullUserData.perfectData.pvpNickName;
+            perfectCard.querySelector('.perfect-app-name').textContent = fullUserData.perfectData.appNickName;
+            perfectCard.querySelector('.cs-info').textContent = fullUserData.perfectData.csInfo;
+            perfectCard.querySelector('.perfect-pvp-score').textContent = fullUserData.perfectData.pvpScore === '0' ? '未定级' : fullUserData.perfectData.pvpScore;
+            perfectCard.querySelector('.max-rating').textContent = fullUserData.perfectData.maxPvpScore;
+            perfectCard.querySelector('.perfect-account-status').textContent = fullUserData.perfectData.accountStatus;
+
+            // 填充国服数据
+            if (Object.keys(fullUserData.perfectData.officialStats).length > 0) {
+                perfectCard.querySelector('.play-time').textContent =
+                    fullUserData.perfectData.officialStats.playTimeHours
+                        ? `${fullUserData.perfectData.officialStats.playTimeHours} 小时`
+                        : '未知';
+                perfectCard.querySelector('.win-rate').textContent =
+                    fullUserData.perfectData.officialStats.winRate
+                        ? `${(fullUserData.perfectData.officialStats.winRate * 100).toFixed(1)}%`
+                        : '未知';
+                perfectCard.querySelector('.kd-off').textContent = fullUserData.perfectData.officialStats.kd || '[N/A]';
+                perfectCard.querySelector('.rating-off').textContent = fullUserData.perfectData.officialStats.rating || '[N/A]';
+                perfectCard.querySelector('.headShotRatio-off').textContent = fullUserData.perfectData.officialStats.headShotRatio || '[N/A]';
+                perfectCard.querySelector('.ADR-off').textContent = fullUserData.perfectData.officialStats.adr || '[N/A]';
+                perfectCard.querySelector('.kast-off').textContent = fullUserData.perfectData.officialStats.kast ? `${fullUserData.perfectData.officialStats.kast}%` : '[N/A]';
+                perfectCard.querySelector('.Rws-off').textContent = fullUserData.perfectData.officialStats.rws || '[N/A]';
+            } else {
+                perfectCard.querySelector('.play-time').textContent = '[N/A]';
+                perfectCard.querySelector('.win-rate').textContent = '[N/A]';
+                perfectCard.querySelector('.kd-off').textContent = '[N/A]';
+                perfectCard.querySelector('.rating-off').textContent = '[N/A]';
+                perfectCard.querySelector('.headShotRatio-off').textContent = '[N/A]';
+                perfectCard.querySelector('.ADR-off').textContent = '[N/A]';
+                perfectCard.querySelector('.kast-off').textContent = '[N/A]';
+                perfectCard.querySelector('.Rws-off').textContent = '[N/A]';
+            }
+
+            return fullUserData;
+        };
+
+        // 详情按钮点击事件
         detailBtn.addEventListener('click', async () => {
             if (detailsLoaded) {
+                // 切换详情显示/隐藏
                 detailsVisible = !detailsVisible;
                 if (detailsVisible) {
                     detailsContainer.style.maxHeight = '2000px';
@@ -1131,6 +1172,7 @@
                 return;
             }
 
+            // 首次点击，加载详情数据
             detailBtn.disabled = true;
             detailBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i><span>加载中...</span>';
             detailsPlaceholder.textContent = '正在整理数据，请稍候...';
@@ -1138,18 +1180,29 @@
             progressBar.style.width = '0%';
 
             try {
-                for (let i = 0; i < 10; i++) {
-                    await new Promise(resolve => setTimeout(resolve, 50));
-                    progressBar.style.width = `${i * 10}%`;
-                }
+                // 模拟进度（可选，提升用户体验）
+                const progressInterval = setInterval(() => {
+                    if (progressBar.style.width === '100%') {
+                        clearInterval(progressInterval);
+                    } else {
+                        progressBar.style.width = `${parseInt(progressBar.style.width) + 10}%`;
+                    }
+                }, 100);
 
+                // 加载并填充详情数据
+                await fillCardDetails();
+
+                // 完成加载
+                clearInterval(progressInterval);
                 detailsPlaceholder.classList.add('hidden');
                 accountsContainer.classList.remove('hidden');
                 progressBar.style.width = '100%';
 
+                // 更新UI状态
                 detailsContainer.style.maxHeight = '2000px';
                 detailBtn.innerHTML = '<i class="fa fa-chevron-up"></i><span>隐藏详情</span>';
                 detailsVisible = true;
+                detailsLoaded = true;
             } catch (e) {
                 console.error("加载详情错误:", e);
                 detailsPlaceholder.textContent = `加载详情失败: ${e.message}`;
@@ -1158,7 +1211,6 @@
             } finally {
                 detailBtn.disabled = false;
                 progressContainer.classList.add('hidden');
-                detailsLoaded = true;
             }
         });
 
