@@ -327,19 +327,43 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-sm">
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
                                     <p class="text-gray-500 dark:text-gray-400">场均击杀</p>
-                                    <p class="avg-kill font-medium">未提供</p>
+                                    <p class="pvp-kill font-medium">未提供</p>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
-                                    <p class="text-gray-500 dark:text-gray-400">场均死亡</p>
-                                    <p class="avg-death font-medium">未提供</p>
+                                    <p class="text-gray-500 dark:text-gray-400">赛季场数</p>
+                                    <p class="cnt-pvp font-medium">未提供</p>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
-                                    <p class="text-gray-500 dark:text-gray-400">K/D比</p>
-                                    <p class="kd-ratio font-medium">未提供</p>
+                                    <p class="text-gray-500 dark:text-gray-400">WE评分</p>
+                                    <p class="avgWe-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">胜率</p>
+                                    <p class="winRaing-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">爆头率</p>
+                                    <p class="Ratio-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">Rating</p>
+                                    <p class="Raing-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">ADR</p>
+                                    <p class="ADR-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">Rws</p>
+                                    <p class="Rws-pvp font-medium">未提供</p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">K/D</p>
+                                    <p class="kd-pvp font-medium">未提供</p>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
                                     <p class="text-gray-500 dark:text-gray-400">最高评分</p>
-                                    <p class="max-rating font-medium"></p>
+                                    <p class="max-pvp font-medium"></p>
                                 </div>
                             </div>
                         </div>
@@ -397,11 +421,11 @@
 
     const WE_idTransfer = 'https://gate.5eplay.com/userinterface/http/v1/userinterface/idTransfer';//uuid获取接口
     const WE_home = 'https://gate.5eplay.com/crane/http/api/data/player/home?uuid='; // 用户生涯数据接口
-    const WE_best_season = 'https://gate.5eplay.com/crane/http/api/data/player/best_season?uuid='//用户主页数据接口
-    const WE_macthlist_api = 'https://gate.5eplay.com/crane/http/api/data/match/list'//用户比赛列表接口
-    const WE_match = 'https://gate.5eplay.com/crane/http/api/data/match/'//对局详细接口
+    const WE_best_season = 'https://gate.5eplay.com/crane/http/api/data/player/best_season?uuid=';//用户主页数据接口
+    const WE_macthlist_api = 'https://gate.5eplay.com/crane/http/api/data/match/list';//用户比赛列表接口
+    const WE_match = 'https://gate.5eplay.com/crane/http/api/data/match/';//对局详细接口
     const WE_userinterface = 'https://gate.5eplay.com/userinterface/pt/v1/userinterface/header/';
-
+    const WE_steamName = 'https://api-client-arena.5eplay.com/api/user/steam_username/';//5E steam获取5e昵称接口
     //模式映射表
     const WE_account_status = {'0':'账户正常','-4':'开挂封禁','-6':'违规行为',}
 
@@ -602,23 +626,23 @@
 
     // ============================================================================
 
-    // ==================== 项目原有功能函数 ====================
+    // ==================== 完美数据功能函数 ====================
 
     const modeDict = {
         "全部模式": -1, "天梯组排": -12, "天梯绿色": -120, "官匹pro": 41, "天梯单排": -46, "单排绿色": -460
     };
 
     const API_URLS = {
-        getInGameUserSetBySid:"https://appactivity.wmpvp.com/steamcn/app/realtime/getInGameUserSetBySid?steamIds=",
-        SEARCH: "https://appengine.wmpvp.com/steamcn/app/search/user",
-        ACCOUNTS: "https://appengine.wmpvp.com/steamcn/community/user/getNewUserList",
-        FORBID: "https://api.wmpvp.com/api/csgo/home/user/forbid",
-        MATCHES: "https://api.wmpvp.com/api/csgo/home/match/list",
-        STATS: "https://api.wmpvp.com/api/csgo/home/pvp/detailStats",
-        INVENTORY: "https://gwapi.pwesports.cn/appdecoration/steamcn/csgo/decoration/getSteamInventoryPreview",
-        OFFICIAL_STATS: "https://api.wmpvp.com/api/csgo/home/official/detailStats",
-        CSINFO: "https://gwapi.pwesports.cn/appdatacenter/csgo/official/fall/userCsgoInfo",
-        STEAM_DATA: "https://steamrepcn.com/profiles/"
+        getInGameUserSetBySid:"https://appactivity.wmpvp.com/steamcn/app/realtime/getInGameUserSetBySid?steamIds=",//获取玩家游戏状态 [在线/离线] [国服/平台]
+        SEARCH: "https://appengine.wmpvp.com/steamcn/app/search/user",//完美昵称搜索接口
+        ACCOUNTS: "https://appengine.wmpvp.com/steamcn/community/user/getNewUserList",//完美绑定账号关联接口
+        FORBID: "https://api.wmpvp.com/api/csgo/home/user/forbid",//玩家封禁状态获取接口
+        MATCHES: "https://api.wmpvp.com/api/csgo/home/match/list",//玩家比赛记录数据接口
+        STATS: "https://api.wmpvp.com/api/csgo/home/pvp/detailStats",//完美平台数据获取接口
+        INVENTORY: "https://gwapi.pwesports.cn/appdecoration/steamcn/csgo/decoration/getSteamInventoryPreview",//玩家CS2饰品库存数据接口
+        OFFICIAL_STATS: "https://api.wmpvp.com/api/csgo/home/official/detailStats",//玩家国服数据获取接口
+        CSINFO: "https://gwapi.pwesports.cn/appdatacenter/csgo/official/fall/userCsgoInfo",//获取优先状态
+        STEAM_DATA: "https://steamrepcn.com/profiles/"//steam社区数据获取接口
     };
 
     const mockUserData = [
@@ -787,6 +811,34 @@
             return "无法获取优先状态";
         }
     }
+    async function getPvPStats(steamId) {//获取完美数据
+        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
+            return null;
+        }
+        try {
+            const { steamID: mySteamId, token } = getRandomUser();
+            const headers = getHeaders(token);
+            const response = await fetch(API_URLS.STATS, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({ toSteamId: steamId, mySteamId: mySteamId, accessToken: token })
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.statusCode === 0 && data.data) {
+                if (data.data.playTime) {
+                    data.data.playTimeHours = parseFloat((data.data.playTime / 3600).toFixed(1));
+                }
+                return data.data;
+            }
+            return null;
+        } catch (e) {
+            console.error("获取国服统计错误:", e);
+            return null;
+        }
+    }
 
     async function getOfficialStats(steamId) {
         //获取国服数据
@@ -950,7 +1002,7 @@
         card.querySelector('.pvp-nickname').textContent = rawUser.username;
         card.querySelector('.app-nickname').textContent = userData.app_nickname;
         card.querySelector('.steam-id').textContent = userData.steam_id;
-        
+
         // 账号状态
         const accountStatusText = rawUserData ? (WE_account_status[rawUserData.account_status] || '未知状态') : '未知状态';
         card.querySelector('.forbid-info').textContent = accountStatusText;
@@ -981,7 +1033,7 @@
         } else {
             avatarPlaceholder.style.display = 'flex';
         }
-        
+
         // 绑定详情按钮事件 - 核心修改点
         const detailBtn = card.querySelector('.detail-btn');
         const detailsContainer = card.querySelector('.details-container');
@@ -1010,9 +1062,10 @@
 
             // 获取完美平台信息
             const perfectUserInfo = await searchUsers(steamId);
-            const [csInfo, officialInfo, perfectAccountStatus] = steamId ? await Promise.all([
+            const [csInfo, officialInfo,PvPStats, perfectAccountStatus] = steamId ? await Promise.all([
                 getCsInfo(steamId),
                 getOfficialStats(steamId),
+                getPvPStats(steamId),
                 getAccountForbidInfo(steamId)
             ]) : ["无法获取优先状态", null, "未知"];
 
@@ -1050,6 +1103,7 @@
                     appNickName: perfectUserInfo?.appNickName || '未知',
                     pvpScore: perfectUserInfo?.pvpScore || '0',
                     csInfo: csInfo,
+                    PvPStats:PvPStats || {},
                     maxPvpScore: maxPvpScore,
                     officialStats: officialInfo || {},
                     accountStatus: perfectAccountStatus || '未知'
@@ -1062,7 +1116,7 @@
             // 更新卡片的基础信息
             card.querySelector('.app-nickname').textContent = fullUserData.app_nickname;
             card.querySelector('.steam-id').textContent = fullUserData.steam_id;
-            
+
             // 更新5E分数和段位
             const newPvpScore = fullUserData.pvp_score;
             scoreBadge.textContent = `5E排位分: ${newPvpScore === 0 ? '未定级' : newPvpScore}`;
@@ -1120,18 +1174,26 @@
                 perfectCard_absolute.style.backgroundImage = `url('ban-imges/pac-ban.png')`;
                 perfectCard_absolute.classList.remove('hidden');
             }
-            perfectCard.querySelector('.perfect-name').textContent = fullUserData.perfectData.pvpNickName;
-            perfectCard.querySelector('.perfect-app-name').textContent = fullUserData.perfectData.appNickName;
-            perfectCard.querySelector('.cs-info').textContent = fullUserData.perfectData.csInfo;
-            perfectCard.querySelector('.perfect-pvp-score').textContent = fullUserData.perfectData.pvpScore === '0' ? '未定级' : fullUserData.perfectData.pvpScore;
-            perfectCard.querySelector('.max-rating').textContent = fullUserData.perfectData.maxPvpScore;
+            perfectCard.querySelector('.perfect-name').textContent = fullUserData.perfectData.pvpNickName;//完美昵称
+            perfectCard.querySelector('.perfect-app-name').textContent = fullUserData.perfectData.appNickName;//完美APP昵称
+            perfectCard.querySelector('.cs-info').textContent = fullUserData.perfectData.csInfo;//优先状态
+            perfectCard.querySelector('.perfect-pvp-score').textContent = fullUserData.perfectData.pvpScore === '0' ? '未定级' : fullUserData.perfectData.pvpScore;//完美排位分
+            perfectCard.querySelector('.max-pvp').textContent = fullUserData.perfectData.maxPvpScore;//完美历史最高分数
+            perfectCard.querySelector('.kd-pvp').textContent = fullUserData.perfectData.PvPStats.kd;//完美KD
+            perfectCard.querySelector('.ADR-pvp').textContent = fullUserData.perfectData.PvPStats.adr;//完美ADR
+            perfectCard.querySelector('.Raing-pvp').textContent = fullUserData.perfectData.PvPStats.rating;//完美Rating
+            perfectCard.querySelector('.Ratio-pvp').textContent = fullUserData.perfectData.PvPStats.headShotRatio * 100 || 0;//完美爆头率
+            perfectCard.querySelector('.winRaing-pvp').textContent = fullUserData.perfectData.PvPStats.winRate;//完美胜率
+            perfectCard.querySelector('.avgWe-pvp').textContent = fullUserData.perfectData.PvPStats.avgwe;//完美WE评分
+            perfectCard.querySelector('.cnt-pvp').textContent = fullUserData.perfectData.PvPStats.cnt;//完美赛季场数
+            perfectCard.querySelector('.pvp-kill').textContent = fullUserData.perfectData.PvPStats.kills / fullUserData.perfectData.PvPStats.cnt || 0;//完美场均击杀
             perfectCard.querySelector('.perfect-account-status').textContent = fullUserData.perfectData.accountStatus;
 
             // 填充国服数据
             if (Object.keys(fullUserData.perfectData.officialStats).length > 0) {
                 perfectCard.querySelector('.play-time').textContent =
-                    fullUserData.perfectData.officialStats.playTimeHours
-                        ? `${fullUserData.perfectData.officialStats.playTimeHours} 小时`
+                    fullUserData.perfectData.officialStats.hours
+                        ? `${fullUserData.perfectData.officialStats.hours}小时`
                         : '未知';
                 perfectCard.querySelector('.win-rate').textContent =
                     fullUserData.perfectData.officialStats.winRate
