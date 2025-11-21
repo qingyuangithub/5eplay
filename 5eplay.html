@@ -870,7 +870,7 @@
         }
     }
 
-    // 获取国服比赛数据
+    // 获取完美平台比赛数据
     async function getAccountMatches(steamId) {
         if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
             return [];
@@ -907,10 +907,14 @@
 
     // 从 searchUsers 的结果中获取最高评分
     function getUserMaxScore(perfectUserInfo) {
-        if (!perfectUserInfo || !perfectUserInfo.pvpScore) {
+
+        if (!perfectUserInfo) {
             return "无数据";
         }
-        return perfectUserInfo.pvpScore;
+        let PvPScore = perfectUserInfo.map(Score => Score.pvpScore);
+        let MaxScore = Math.max(...PvPScore);
+        console.log(MaxScore);
+        return MaxScore;
     }
 
     // 时间戳转换函数 (原代码中缺失)
@@ -1062,6 +1066,7 @@
 
             // 获取完美平台信息
             const perfectUserInfo = await searchUsers(steamId);
+            const PVPIfon = await getAccountMatches(steamId)
             const [csInfo, officialInfo,PvPStats, perfectAccountStatus] = steamId ? await Promise.all([
                 getCsInfo(steamId),
                 getOfficialStats(steamId),
@@ -1070,7 +1075,7 @@
             ]) : ["无法获取优先状态", null, "未知"];
 
             // 格式化完整的用户数据
-            const maxPvpScore = getUserMaxScore(perfectUserInfo);
+            const maxPvpScore = getUserMaxScore(PVPIfon);//完美最高分数
             const fullUserData = {
                 userId: uuid,
                 pvp_nickname: rawUser.username,
@@ -1186,6 +1191,7 @@
             perfectCard.querySelector('.winRaing-pvp').textContent = fullUserData.perfectData.PvPStats.winRate;//完美胜率
             perfectCard.querySelector('.avgWe-pvp').textContent = fullUserData.perfectData.PvPStats.avgwe;//完美WE评分
             perfectCard.querySelector('.cnt-pvp').textContent = fullUserData.perfectData.PvPStats.cnt;//完美赛季场数
+            perfectCard.querySelector('.Rws-pvp').textContent = fullUserData.perfectData.PvPStats.rws;//完美赛季场数
             perfectCard.querySelector('.pvp-kill').textContent = fullUserData.perfectData.PvPStats.kills / fullUserData.perfectData.PvPStats.cnt || 0;//完美场均击杀
             perfectCard.querySelector('.perfect-account-status').textContent = fullUserData.perfectData.accountStatus;
 
