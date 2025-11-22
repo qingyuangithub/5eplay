@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="stecit/5ePlayApi.js"></script>
+    <script src="stecit/perfectApi.js"></script>
+    <script src="stecit/copy-toast.js"></script>
     <!-- 配置主题 -->
     <script>
         tailwind.config = {
@@ -67,6 +70,12 @@
 <header class="bg-gradient-to-r from-primary to-secondary text-white shadow-lg">
     <div class="container mx-auto px-4 py-6">
         <div class="flex justify-between items-center">
+            <button id="search-mode" class="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-lg flex items-center gap-2">
+                <img src="https://img1.baidu.com/it/u=1580765950,111642296&fm=253&fmt=auto&app=138&f=JPEG?w=190&h=190" id="5e-ico" width="40" height="40" class="rounded-full:hidden">
+                <img src="https://img2.baidu.com/it/u=397258135,1119881798&fm=253&fmt=auto&app=138&f=PNG?w=243&h=243" id="perfect-ico" width="40" height="40" hidden class="rounded-full">
+                <span class="5e-text:hidden">5E模式</span>
+                <span class="hidden perfect-text">完美模式</span>
+            </button>
             <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-shadow-lg">5E全平台查成分</h1>
             <button id="themeToggle" class="bg-white/20 hover:bg-white/30 transition-colors px-4 py-2 rounded-lg flex items-center gap-2">
                 <i class="fa fa-moon-o dark:hidden"></i>
@@ -227,6 +236,10 @@
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
                                     <p class="text-gray-500 dark:text-gray-400">Rating</p>
                                     <p class="fivee-rating font-medium"></p>
+                                </div>
+                                <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
+                                    <p class="text-gray-500 dark:text-gray-400">游戏总时长</p>
+                                    <p class="fivee-match_time_total font-medium"></p>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-dark-card p-2 rounded">
                                     <p class="text-gray-500 dark:text-gray-400">ELO</p>
@@ -414,519 +427,6 @@
 </template>
 
 <script>
-    // ==================== 5EPlay API 相关函数 (来自 5Eplay_API.js) ====================
-
-    const imgeshost = 'https://oss-arena.5eplay.com/';
-    const homeHost = 'https://arena.5eplay.com/data/player/';
-
-    const WE_idTransfer = 'https://gate.5eplay.com/userinterface/http/v1/userinterface/idTransfer';//uuid获取接口
-    const WE_home = 'https://gate.5eplay.com/crane/http/api/data/player/home?uuid='; // 用户生涯数据接口
-    const WE_best_season = 'https://gate.5eplay.com/crane/http/api/data/player/best_season?uuid=';//用户主页数据接口
-    const WE_macthlist_api = 'https://gate.5eplay.com/crane/http/api/data/match/list';//用户比赛列表接口
-    const WE_match = 'https://gate.5eplay.com/crane/http/api/data/match/';//对局详细接口
-    const WE_userinterface = 'https://gate.5eplay.com/userinterface/pt/v1/userinterface/header/';
-    const WE_steamName = 'https://api-client-arena.5eplay.com/api/user/steam_username/';//5E steam获取5e昵称接口
-    //模式映射表
-    const WE_account_status = {'0':'账户正常','-4':'开挂封禁','-6':'违规行为',}
-
-    const statusToImageUrl = {
-    '-2': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_illegality_ban.png',   // 非法行为
-    '-4': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_cheating_ban.png',       // 作弊行为
-    '-5': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_cheating_association_ban.png',  // 作弊关联行为
-    '-6': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_unlawful_act_ban.png',  // 违规行为
-    '-7': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_malicious_act_ban.png',  // 恶意行为
-    '-8': 'https://oss-arena.5eplay.com/ya_static/images/personalInfo/ban/player_risk_ban.png'           // 风险行为
-    };
-
-    //5E接口函数
-    function get_player(keyword) {
-      const targetLink = `https://arena.5eplay.com/api/search/player/1/16?keywords=${keyword}`;
-      const urlo = `https://api.allorigins.win/get?url=${encodeURIComponent(targetLink)}`
-      return fetch(urlo)
-        .then(response => response.json())
-        .then(proxyData => {
-          const JsonData = JSON.parse(proxyData.contents);
-          return JsonData; // 返回解析后的数据，供后续 .then 使用
-        })
-        .catch(error => {
-          console.error('❌ 访问失败：', error);
-          return null; // 错误时返回 null，避免后续报错
-        });
-    }
-
-    function get_uuid(domain) {
-      //获取用户uuid
-      const header_ = {
-        "accept": "*/*",
-        "accept-encoding": "gzip, deflate, br, zstd",
-        "accept-language": "zh-cn",
-        "authorization": "",
-        "content-type": "application/json",
-        "sec-ch-ua": "\"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-        "x-ca-key": "5eplay",
-        "x-ca-signature": "pm/c+nYSScWXLOYG7WCczBallQAPFsQ+mu3szgvr7xg=",
-        "x-ca-signature-headers": "Accept-Language,Authorization",
-        "x-ca-signature-method": "HmacSHA256"
-      };
-      return fetch(WE_idTransfer, {
-        method: 'POST',
-        headers: header_,
-        body: JSON.stringify({ 'trans': { 'domain': domain } })
-      }).then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-        .then(PostData => {
-          if (PostData && PostData.data && PostData.data.uuid) {
-            return PostData.data.uuid;
-          } else {
-            console.warn('获取 UUID 数据结构异常:', PostData);
-            return '获取失败';
-          }
-        })
-        .catch(error => {
-          console.error('❌ 获取 UUID 失败：', error);
-          return '获取失败';
-        });
-    }
-
-    function get_macthlist(uuid){
-        if (uuid === '获取失败') return Promise.resolve(null);
-        let params = {
-        'match_type':-1,
-        'page':1,
-        'date':0,
-        'start_time':0,
-        'end_time':0,
-        'uuid': uuid,
-        'limit':99999,
-        'cs_type':0,
-        }
-        const queryString = new URLSearchParams(params).toString();
-        const targetUrl = `${WE_macthlist_api}?${queryString}`;
-        return fetch(targetUrl, { method: 'GET' })
-        .then(response => response.json())
-        .then(proxydata=> {
-            if (proxydata && proxydata.data && proxydata.data.length > 0) {
-                return proxydata.data[0].match_id || null;
-            }
-            return null;
-        }).catch(error => {
-            console.error('❌ 获取比赛列表失败：', error);
-            return null;
-        })
-    }
-
-    function get_home(uuid) {
-      if (uuid === '获取失败') return Promise.resolve(null);
-      let homeURL = WE_home + uuid
-      return fetch(homeURL)
-        .then(response => response.json())
-        .then(postData => {
-          if (postData && postData.data && postData.data.season_data && postData.data.season_data["9"]) {
-            return postData.data.season_data["9"];
-          }
-          return null;
-        })
-        .catch(error => {
-          console.error('❌ 获取主页数据失败：', error);
-          return null;
-        });
-    }
-
-    function get_userData(uuid){
-        if (uuid === '获取失败') return Promise.resolve(null);
-        let userinterfaceUrl = WE_userinterface + uuid;
-        return fetch(userinterfaceUrl)
-        .then(response => response.json())
-        .then(postData => {
-            if (postData && postData.data && postData.data.header && postData.data.header.user_data) {
-                return postData.data.header.user_data;
-            }
-            return null;
-        })
-        .catch(error => {
-          console.error('❌ 获取用户状态数据失败：', error);
-          return null;
-        });
-    }
-
-    function get_steamID(matchId, targetUuid) {
-      if (!matchId || targetUuid === '获取失败') return Promise.resolve(null);
-      const targetUrl = `${WE_match}${matchId}`;
-      return fetch(targetUrl)
-        .then(response => response.json())
-        .then(postData => {
-          if (!postData || !postData.data || !postData.data.group_1 || !postData.data.group_2) {
-              return null;
-          }
-          let group = postData.data.group_1.concat(postData.data.group_2);
-          for (let i = 0; i < group.length; i++) {
-            const player = group[i];
-            if (player && player.user_info && player.user_info.user_data && player.user_info.user_data.uuid === targetUuid && player.user_info.user_data.steam && player.user_info.user_data.steam.steamId) {
-              return player.user_info.user_data.steam.steamId;
-            }
-          }
-          return null;
-        })
-        .catch(error => {
-          console.error("❌ 获取 SteamID 失败:", error);
-          return null;
-        });
-    }
-
-    function get_steamData(steamId) {
-        if (!steamId) return Promise.resolve(null);
-        return fetch(`https://download.imagedownloader.online/?url=https://steamrepcn.com/profiles/${steamId}`)
-        .then(response => response.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const listContainer = doc.querySelector('div[class="flex w-full justify-between"]');
-          const avatarContainer = doc.querySelector('div[class="flex px-5"]');
-          const steamNameElement = doc.querySelector('p[class="mb-2 truncate text-4xl font-bold leading-tight"]');
-          if (!listContainer || !avatarContainer || !steamNameElement) {
-              return null;
-          }
-          const listText = listContainer.querySelectorAll('div[class="flex flex-col"]');
-          const SteamifonData = {}
-          SteamifonData['steam_avatar'] = avatarContainer.querySelector('img').src || null;
-          SteamifonData['SteamName'] = steamNameElement.getAttribute('title') || null;
-          listText.forEach(element => {
-            try {
-              const mlElement = element.querySelector('p[class="ml-2"]');
-              const textElement = element.querySelector('p[class="ml-2 text-gray-400 text-sm"]');
-              if (mlElement && textElement) {
-                  const ml = mlElement.innerText.trim();
-                  const text = textElement.innerText.trim();
-                  SteamifonData[ml] = text;
-              }
-            } catch (e) {}
-          });
-        return SteamifonData;
-        }).catch(error => {
-          console.error("❌ 获取 Steam 数据失败:", error);
-          return null;
-        });
-    }
-
-    //工具(转换时间戳)
-    function convertTimestamp(timestamp) {
-      if (!timestamp) return "未知";
-      const ms = timestamp.toString().length === 10 ? timestamp * 1000 : timestamp;
-      return new Date(ms).toLocaleString('zh-CN', {
-        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-      });
-    }
-
-    // ============================================================================
-
-    // ==================== 完美数据功能函数 ====================
-
-    const modeDict = {
-        "全部模式": -1, "天梯组排": -12, "天梯绿色": -120, "官匹pro": 41, "天梯单排": -46, "单排绿色": -460
-    };
-
-    const API_URLS = {
-        getInGameUserSetBySid:"https://appactivity.wmpvp.com/steamcn/app/realtime/getInGameUserSetBySid?steamIds=",//获取玩家游戏状态 [在线/离线] [国服/平台]
-        SEARCH: "https://appengine.wmpvp.com/steamcn/app/search/user",//完美昵称搜索接口
-        ACCOUNTS: "https://appengine.wmpvp.com/steamcn/community/user/getNewUserList",//完美绑定账号关联接口
-        FORBID: "https://api.wmpvp.com/api/csgo/home/user/forbid",//玩家封禁状态获取接口
-        MATCHES: "https://api.wmpvp.com/api/csgo/home/match/list",//玩家比赛记录数据接口
-        STATS: "https://api.wmpvp.com/api/csgo/home/pvp/detailStats",//完美平台数据获取接口
-        INVENTORY: "https://gwapi.pwesports.cn/appdecoration/steamcn/csgo/decoration/getSteamInventoryPreview",//玩家CS2饰品库存数据接口
-        OFFICIAL_STATS: "https://api.wmpvp.com/api/csgo/home/official/detailStats",//玩家国服数据获取接口
-        CSINFO: "https://gwapi.pwesports.cn/appdatacenter/csgo/official/fall/userCsgoInfo",//获取优先状态
-        STEAM_DATA: "https://steamrepcn.com/profiles/"//steam社区数据获取接口
-    };
-
-    const mockUserData = [
-        { 'steamID': '76561199721184339', 'userID': '1026293222', 'token': '7667e792473259e7e40cd7658b1681a0d2a7ce6c' },
-        { 'steamID': '76561199697817037', 'userID': '1022646069', 'token': '8dfa964afe38a638488b66f55b32d601e1a4e79a' },
-        {'steamID': '76561199722026486', 'userID': '1026158310', 'token': '69b506ce5b3be3ba49622305851baf2b72df1ed1'}
-    ];
-
-    function getRandomUser() {
-        return mockUserData[Math.floor(Math.random() * mockUserData.length)];
-    }
-
-    function getHeaders(token) {
-        const headers = {
-            "accept": "application/json, text/plain, */*",
-            "accept-language": "zh-CN,zh;q=0.9",
-            "content-type": "application/json",
-            "sec-ch-ua": "\"Chromium\";v=\"116\", \"Not)A;Brand\";v=\"24\", \"Google Chrome\";v=\"116\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "Referer": "https://csgo.wmpvp.com/",
-            'appversion': '3.6.2.189',
-            'device': 'KGPSz1754474645YpsvmPeeMtb',
-            'gameType': '2',
-            'gameTypeStr': '2',
-            'platform': 'android',
-            'appTheme': '0',
-            'Connection': 'Keep-Alive',
-            'Accept-Encoding': 'gzip',
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36"
-        };
-        if (token) headers["token"] = `${token}`;
-        return headers;
-    }
-
-    // 根据分数获取段位颜色（与提供的图片匹配）
-    function getRankColor(score) {
-        if (score >= 2800) return "#FFD700"; // S星级 - 金色（带星光效果）
-        else if (score >= 2601) return "#F9B641"; // S - 浅金色
-        else if (score >= 2401) return "#FF7A00"; // A+ - 深橙色
-        else if (score >= 2201) return "#FF5700"; // A - 橙色
-        else if (score >= 2001) return "#D81F26"; // B+ - 深红色
-        else if (score >= 1801) return "#C41E3A"; // B - 红色
-        else if (score >= 1601) return "#9333EA"; // C+ - 深紫色
-        else if (score >= 1301) return "#A020F0"; // C - 紫色
-        else if (score >= 1001) return "#4F70FF"; // D+ - 亮蓝色
-        else if (score >= 0) return "#4A6CF7"; // D - 蓝色
-        return "#808080"; // 未定级 - 灰色
-    }
-
-    // 根据分数获取段位文本（按指定区间划分）
-    function getRankText(score) {
-        if (score >= 2800) {
-            const stars = Math.floor((score - 2800) / 50) + 1;
-            return `S ${'★'.repeat(stars)}`;
-        } else if (score >= 2601) return "S";
-        else if (score >= 2401) return "A+";
-        else if (score >= 2201) return "A";
-        else if (score >= 2001) return "B+";
-        else if (score >= 1801) return "B";
-        else if (score >= 1601) return "C+";
-        else if (score >= 1301) return "C";
-        else if (score >= 1001) return "D+";
-        else if (score >= 0) return "D";
-        return "未定级";
-    }
-
-    // 根据SteamID搜索完美平台用户信息
-    async function searchUsers(steamId) {
-        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
-            return null;
-        }
-        try {
-            const { token } = getRandomUser();
-            const headers = getHeaders(token);
-            const response = await fetch(API_URLS.SEARCH, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    keyword: steamId,
-                    page: 1,
-                    pageSize: 10,
-                    searchType: 1 // 1 表示按 SteamID 搜索
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            // 检查返回数据结构是否符合预期
-            if (data.result) {
-                return data.result[0]; // 返回第一个匹配的用户
-            }
-            return null; // 未找到用户或数据格式不正确
-        } catch (e) {
-            console.error("搜索完美用户错误:", e);
-            return null;
-        }
-    }
-
-    // 获取完美平台账号封禁信息
-    async function getAccountForbidInfo(steamId) {
-        if (!steamId) {
-            return "未知";
-        }
-        try {
-            const { steamID: mySteamId, token } = getRandomUser();
-            const headers = getHeaders(token);
-
-            const response = await fetch(API_URLS.FORBID, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    toSteamId: steamId,
-                    mySteamId: mySteamId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            if (data.statusCode === 0 && data.data) {
-                const forbidDetail = data.data;
-                if ([0, null, undefined].indexOf(forbidDetail.pwaBanType) === -1) {
-                    const expireDate = timestampToDate(forbidDetail.expireTime);
-                    const createDate = timestampToDate(forbidDetail.createTime);
-                    const desc = forbidDetail.desc || "未说明封禁原因";
-                    return `存在封禁记录\n封禁原因：${desc}\n封禁时间：${createDate}\n解封时间：${expireDate}`;
-                } else {
-                    return "状态正常";
-                }
-            } else {
-                return `封禁查询失败：${data.errorMessage || '未知错误'}`;
-            }
-        } catch (e) {
-            console.error("获取封禁信息错误:", e);
-            return "查询失败";
-        }
-    }
-
-    async function getCsInfo(steamId) {
-        if (!steamId) {
-            return "无法获取优先状态";
-        }
-        try {
-            const { token } = getRandomUser();
-            const params = new URLSearchParams({ steamId: steamId, token: token, darkType: '0' });
-            const response = await fetch(`${API_URLS.CSINFO}?${params.toString()}`, { method: "GET", headers: getHeaders() });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.result && data.result.levelTitle) {
-                return `优先用户 ${data.result.levelTitle}-${data.result.curLevel}级`;
-            }
-            return "非优先用户";
-        } catch (e) {
-            console.error("获取CS信息错误:", e);
-            return "无法获取优先状态";
-        }
-    }
-    async function getPvPStats(steamId) {//获取完美数据
-        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
-            return null;
-        }
-        try {
-            const { steamID: mySteamId, token } = getRandomUser();
-            const headers = getHeaders(token);
-            const response = await fetch(API_URLS.STATS, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({ toSteamId: steamId, mySteamId: mySteamId, accessToken: token })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.statusCode === 0 && data.data) {
-                if (data.data.playTime) {
-                    data.data.playTimeHours = parseFloat((data.data.playTime / 3600).toFixed(1));
-                }
-                return data.data;
-            }
-            return null;
-        } catch (e) {
-            console.error("获取国服统计错误:", e);
-            return null;
-        }
-    }
-
-    async function getOfficialStats(steamId) {
-        //获取国服数据
-        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
-            return null;
-        }
-        try {
-            const { steamID: mySteamId, token } = getRandomUser();
-            const headers = getHeaders(token);
-            const response = await fetch(API_URLS.OFFICIAL_STATS, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({ toSteamId: steamId, mySteamId: mySteamId, accessToken: token })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.statusCode === 0 && data.data) {
-                if (data.data.playTime) {
-                    data.data.playTimeHours = parseFloat((data.data.playTime / 3600).toFixed(1));
-                }
-                return data.data;
-            }
-            return null;
-        } catch (e) {
-            console.error("获取国服统计错误:", e);
-            return null;
-        }
-    }
-
-    // 获取完美平台比赛数据
-    async function getAccountMatches(steamId) {
-        if (!steamId || ["N/A", "未知", ""].includes(steamId.toString().trim())) {
-            return [];
-        }
-        try {
-            const { steamID: mySteamId, token } = getRandomUser();
-            const headers = getHeaders(token);
-            const response = await fetch(API_URLS.MATCHES, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    mySteamId: mySteamId,
-                    toSteamId: steamId,
-                    csgoSeasonId: "recent",
-                    pvpType: modeDict["全部模式"],
-                    page: 1,
-                    pageSize: 9999,
-                    dataSource: 3
-                })
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.statusCode === 0 && data.data && data.data.matchList) {
-                return data.data.matchList;
-            }
-            return [];
-        } catch (e) {
-            console.error("获取比赛数据错误:", e);
-            return [];
-        }
-    }
-
-    // 从 searchUsers 的结果中获取最高评分
-    function getUserMaxScore(perfectUserInfo) {
-
-        if (!perfectUserInfo) {
-            return "无数据";
-        }
-        let PvPScore = perfectUserInfo.map(Score => Score.pvpScore);
-        let MaxScore = Math.max(...PvPScore);
-        console.log(MaxScore);
-        return MaxScore;
-    }
-
-    // 时间戳转换函数 (原代码中缺失)
-    function timestampToDate(timestamp) {
-        if (!timestamp) return "未知";
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    }
-
-    // ============================================================================
-
-    // ==================== 主搜索与UI渲染函数 ====================
 
     // 主搜索函数
     async function performSearch(keyword) {
@@ -1144,12 +644,14 @@
                 we_absolute.style.backgroundImage = `url(${statusToImageUrl[fullUserData.accountStatus_] || ''})`;
                 we_absolute.classList.remove('hidden');
             }
+
             fiveeCard.querySelector('.fivee-name').textContent = fullUserData.pvp_nickname;
             fiveeCard.querySelector('.fivee-regdate').textContent = fullUserData.fiveeData.regDate;
             fiveeCard.querySelector('.fivee-credit').textContent = fullUserData.fiveeData.creditScore;
             fiveeCard.querySelector('.fivee-report').textContent = fullUserData.fiveeData.reportCount;
             fiveeCard.querySelector('.fivee-rating').textContent = fullUserData.fiveeData.rating;
             fiveeCard.querySelector('.fivee-elo').textContent = fullUserData.fiveeData.elo;
+            fiveeCard.querySelector('.fivee-match_time_total').textContent = rawUserData.match_time_total / 60 || -2233;
             fiveeCard.querySelector('.fivee-adr').textContent = fullUserData.fiveeData.adr;
             fiveeCard.querySelector('.fivee-rws').textContent = fullUserData.fiveeData.rws;
 
@@ -1183,16 +685,16 @@
             perfectCard.querySelector('.perfect-app-name').textContent = fullUserData.perfectData.appNickName;//完美APP昵称
             perfectCard.querySelector('.cs-info').textContent = fullUserData.perfectData.csInfo;//优先状态
             perfectCard.querySelector('.perfect-pvp-score').textContent = fullUserData.perfectData.pvpScore === '0' ? '未定级' : fullUserData.perfectData.pvpScore;//完美排位分
-            perfectCard.querySelector('.max-pvp').textContent = fullUserData.perfectData.maxPvpScore;//完美历史最高分数
-            perfectCard.querySelector('.kd-pvp').textContent = fullUserData.perfectData.PvPStats.kd;//完美KD
-            perfectCard.querySelector('.ADR-pvp').textContent = fullUserData.perfectData.PvPStats.adr;//完美ADR
-            perfectCard.querySelector('.Raing-pvp').textContent = fullUserData.perfectData.PvPStats.rating;//完美Rating
-            perfectCard.querySelector('.Ratio-pvp').textContent = fullUserData.perfectData.PvPStats.headShotRatio * 100 || 0;//完美爆头率
-            perfectCard.querySelector('.winRaing-pvp').textContent = fullUserData.perfectData.PvPStats.winRate;//完美胜率
-            perfectCard.querySelector('.avgWe-pvp').textContent = fullUserData.perfectData.PvPStats.avgwe;//完美WE评分
-            perfectCard.querySelector('.cnt-pvp').textContent = fullUserData.perfectData.PvPStats.cnt;//完美赛季场数
-            perfectCard.querySelector('.Rws-pvp').textContent = fullUserData.perfectData.PvPStats.rws;//完美赛季场数
-            perfectCard.querySelector('.pvp-kill').textContent = fullUserData.perfectData.PvPStats.kills / fullUserData.perfectData.PvPStats.cnt || 0;//完美场均击杀
+            perfectCard.querySelector('.max-pvp').textContent = fullUserData.perfectData.maxPvpScore || 'D-';//完美历史最高分数
+            perfectCard.querySelector('.kd-pvp').textContent = fullUserData.perfectData.PvPStats.kd || -2233;//完美KD
+            perfectCard.querySelector('.ADR-pvp').textContent = fullUserData.perfectData.PvPStats.adr || -2233;//完美ADR
+            perfectCard.querySelector('.Raing-pvp').textContent = fullUserData.perfectData.PvPStats.rating || -2233;//完美Rating
+            perfectCard.querySelector('.Ratio-pvp').textContent = fullUserData.perfectData.PvPStats.headShotRatio * 100 || -2233;//完美爆头率
+            perfectCard.querySelector('.winRaing-pvp').textContent = `${parseInt(fullUserData.perfectData.PvPStats.winRate * 100)}%` || -2233;//完美胜率
+            perfectCard.querySelector('.avgWe-pvp').textContent = fullUserData.perfectData.PvPStats.avgWe || -2233;//完美WE评分
+            perfectCard.querySelector('.cnt-pvp').textContent = fullUserData.perfectData.PvPStats.cnt || -2233;//完美赛季场数
+            perfectCard.querySelector('.Rws-pvp').textContent = fullUserData.perfectData.PvPStats.rws || -2233;//完美赛季场数
+            perfectCard.querySelector('.pvp-kill').textContent = parseInt(fullUserData.perfectData.PvPStats.kills / fullUserData.perfectData.PvPStats.cnt) || -2233;//完美场均击杀
             perfectCard.querySelector('.perfect-account-status').textContent = fullUserData.perfectData.accountStatus;
 
             // 填充国服数据
@@ -1285,8 +787,10 @@
         return card;
     }
 
+
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', () => {
+        var currentSearchMode = '5e';//初始搜索模式为5E接口
         // 搜索按钮点击事件
         const searchButton = document.getElementById('searchButton');
         const searchInput = document.getElementById('searchInput');
@@ -1294,7 +798,11 @@
         searchButton.addEventListener('click', () => {
             const keyword = searchInput.value.trim();
             if (keyword) {
-                performSearch(keyword);
+                if (currentSearchMode === '5e') {
+                    performSearch(keyword);
+                }if(currentSearchMode === 'perfect') {
+                    showCopyToast('接口暂时停用Q^Q','error','color: #9E9E9E;');//预留为完美搜索接口做保留
+                }
             }
         });
 
@@ -1303,8 +811,37 @@
             if (e.key === 'Enter') {
                 const keyword = searchInput.value.trim();
                 if (keyword) {
-                    performSearch(keyword);
+                    if (currentSearchMode === '5e') {
+                        performSearch(keyword);
+                    }if(currentSearchMode === 'perfect') {
+                        showCopyToast('接口暂时停用Q^Q','error','color: #9E9E9E;');//预留为完美搜索接口做保留
+                    }
                 }
+            }
+        });
+        // 搜索模式切换
+        const fiveeIco = document.getElementById('5e-ico');
+        const perfectIco = document.getElementById('perfect-ico');
+        const search_mode = document.querySelector('#search-mode');
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        search_mode.addEventListener('click', () => { //更换接口搜索事件
+            if (search_mode.querySelector('span').innerText === '5E模式') {
+                search_mode.querySelector('span').innerText = '完美模式';
+                currentSearchMode = 'perfect';
+                console.log(currentSearchMode);
+                perfectIco.hidden = false;
+                fiveeIco.hidden = true;
+            }else{
+                search_mode.querySelector('span').innerText = '5E模式';
+                currentSearchMode = '5e';
+                console.log(currentSearchMode);
+                perfectIco.hidden = true;
+                fiveeIco.hidden = false;
+
             }
         });
 
@@ -1324,6 +861,7 @@
                 localStorage.setItem('theme', 'dark');
             }
         });
+
 
         // 复制用户信息功能
         document.addEventListener('click', function(e) {
@@ -1345,6 +883,7 @@
                     // 显示复制成功提示
                     const copyBtn = e.target.closest('.copy-btn');
                     const originalHtml = copyBtn.innerHTML;
+                    showCopyToast('复制成功(#^.^#)','success','color: #9E9E9E;');
                     copyBtn.innerHTML = '<i class="fa fa-check"></i><span>复制成功!</span>';
 
                     // 2秒后恢复原文本
