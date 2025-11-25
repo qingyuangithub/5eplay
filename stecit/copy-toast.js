@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    // 等待整个 HTML 文档被完全加载和解析完成
+    // 等待整个 HTML 加载 完成
     document.addEventListener('DOMContentLoaded', function() {
 
         // 1. 注入 CSS 样式
@@ -59,8 +59,6 @@
                 fill: currentColor;
             }
         `;
-        // 使用 document.documentElement 来获取 html 根元素，然后 appendChild
-        // 这比 document.head 更可靠，因为 html 元素总是存在的
         document.documentElement.appendChild(style);
 
         // 2. 创建提示框元素
@@ -106,11 +104,9 @@
             // 3 秒后自动隐藏
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, 4000);
         };
-
-        console.log('%c[5e复制提示] 已通过JS文件加载！', 'color: #4CAF50; font-weight: bold');
-        console.log('%c用法: showCopyToast("你的消息", "success" 或 "error")', 'color: #9E9E9E;');
+        //showCopyToast("你的消息", "success" 或 "error")
 
     }); // 关闭 DOMContentLoaded 事件监听器
 

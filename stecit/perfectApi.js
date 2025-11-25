@@ -109,7 +109,7 @@ async function searchUsers(steamId) {
         const data = await response.json();
         // 检查返回数据结构是否符合预期
         if (data.result) {
-            return data.result[0]; // 返回第一个匹配的用户
+            return data.result; // 返回第一个匹配的用户
         }
         return null; // 未找到用户或数据格式不正确
     } catch (e) {

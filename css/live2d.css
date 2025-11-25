@@ -1,0 +1,89 @@
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
+    height: 100vh;
+    box-sizing: border-box;
+}
+.content {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+/* --- 测试按钮样式 --- */
+#test-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    margin: 20px auto;
+    display: block;
+}
+#test-button:hover {
+    background-color: #0056b3;
+}
+
+/* --- Live2D 容器样式 --- */
+#live2d-container {
+    position: fixed;
+    bottom: 0;
+    right: 20px;
+    /* 为了让气泡定位更准确，建议给容器一个明确的宽度 */
+    width: 150px;
+    height: 300px;
+    z-index: 9999;
+    pointer-events: none;
+}
+#live2d-container canvas {
+    pointer-events: auto;
+}
+
+/* --- 气泡消息样式 --- */
+#message-bubble {
+    position: absolute;
+    /* --- 核心修改点：定位到左上角 --- */
+    top: -10px;    /* 向上偏移 10px，使其在容器外部 */
+    left: -10px;   /* 向左偏移 10px，使其在容器外部 */
+
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border-radius: 18px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 9998;
+    max-width: 250px;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    /* 移除之前的 transform 和 bottom 定位 */
+}
+#message-bubble.show {
+    opacity: 1;
+    /* 可以在这里添加一个轻微的弹出动画 */
+    transform: translateY(-5px);
+}
+/* --- 修改气泡小三角的方向，使其指向右下方 --- */
+#message-bubble::after {
+    content: '';
+    position: absolute;
+    /* 将三角放在气泡的右下角 */
+    bottom: -10px;
+    right: 20px;
+    border-width: 10px 0 0 10px; /* 调整边框宽度和方向 */
+    border-style: solid;
+    /* 让三角指向右下方 */
+    border-color: transparent transparent transparent rgba(255, 255, 255, 0.95);
+}

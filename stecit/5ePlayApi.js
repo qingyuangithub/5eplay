@@ -31,9 +31,23 @@ function get_player(keyword) {
       return JsonData; // 返回解析后的数据，供后续 .then 使用
     })
     .catch(error => {
+      showCopyToast('数据请求超时了Q*Q请稍后重试','error','color: #9E9E9E;');
       console.error('❌ 访问失败：', error);
       return null; // 错误时返回 null，避免后续报错
     });
+}
+
+function get_5Ename(steamId){
+    let steamNameapi = `${WE_steamName}${steamId}`
+    return fetch(steamNameapi)
+    .then(response => response.json())
+    .then(proxyData => {
+        let WEname = proxyData.data.username;
+        return WEname;
+    })
+    .catch(error => {
+        return null
+    })
 }
 
 function get_uuid(domain) {
