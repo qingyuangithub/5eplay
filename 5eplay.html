@@ -7,7 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="css/live2d.css" rel="stylesheet">
     <script src="stecit/5ePlayApi.js"></script>
+    <script src="stecit/live2d.js"></script>
     <script src="stecit/perfectApi.js"></script>
     <script src="stecit/copy-toast.js"></script>
     <!-- 配置主题 -->
@@ -65,8 +67,10 @@
         }
     </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
 <body class="bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-gray-100 transition-colors duration-300">
 <!-- 顶部标题栏 -->
+
 <header class="bg-gradient-to-r from-primary to-secondary text-white shadow-lg">
     <div class="container mx-auto px-4 py-6">
         <div class="flex justify-between items-center">
@@ -87,7 +91,6 @@
         <p class="mt-2 opacity-90">快速查询对手的成分</p>
     </div>
 </header>
-
 <!-- 主内容区 -->
 <main class="container mx-auto px-4 py-8">
     <!-- 搜索框区域 -->
@@ -127,6 +130,10 @@
     <div id="initialState" class="text-center py-16 border border-dashed border-gray-200 dark:border-dark-border rounded-xl bg-white dark:bg-dark-card m-4">
         <i class="fa fa-search text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
         <p class="text-gray-500 dark:text-gray-400">输入玩家5E昵称 并点击搜索按钮开始查询</p>
+    </div>
+    <!-- 初始化看板娘 -->
+    <div id="live2d-container">
+        <div id="message-bubble"></div>
     </div>
 </main>
 
@@ -425,9 +432,63 @@
         </div>
     </div>
 </template>
-
 <script>
+    // 初始化 Live2D 看板娘
+    L2Dwidget.init({
+        model: {
+            jsonPath: 'https://cdn.jsdelivr.net/npm/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json',
+            scale: 1
+        },
+        display: {
+            position: 'right',
+            width: 150,
+            height: 300,
+            hOffset: 0,
+            vOffset: -20,
+        },
+        mobile: {
+            show: true,
+            scale: 0.8
+        },
+        react: {
+            opacityDefault: 0.7,
+            opacityOnHover: 0.9
+        },
+        onload: function () {
+            console.log('Live2D 模型加载完成！');
+            setTimeout(() => {
+                showMessage("你好呀～点击我试试！", 4000);
+            }, 500);
+        }
+    });
 
+    // 核心交互逻辑
+    document.addEventListener('canvas_created', function() {
+        console.log('canvas_created 事件触发');
+        const canvas = document.querySelector('#live2d-container canvas');
+        if (canvas) {
+            canvas.addEventListener('click', function () {
+                console.log('模型被点击了！');
+                const replies = [
+                    "你好呀！",
+                    "有什么可以帮你吗？",
+                    "今天天气真好～",
+                    "不要戳我啦～",
+                    "我是你的看板娘 Shizuku！",
+                    "喜欢和你聊天～"
+                ];
+                const randomReply = replies[Math.floor(Math.random() * replies.length)];
+
+                // 显示气泡
+                showMessage(randomReply);
+
+                // 播放点击动画
+                l2dwidget.sendMessage('showAnimation', 'tap_body');
+            });
+        } else {
+            console.warn('未找到 canvas 元素！');
+        }
+    });
     // 主搜索函数
     async function performSearch(keyword) {
         const resultsContainer = document.getElementById('resultsContainer');
@@ -470,6 +531,7 @@
                     pvp_nickname: user.username,
                     app_nickname: '点击查看详情', // 占位
                     steam_id: '点击查看详情',     // 占位
+                    steam_name: '',
                     pvp_score: 0, // 占位
                     avatar: user.avatar_url ? imgeshost + user.avatar_url : '',
                     // 存储原始数据供后续使用
@@ -494,7 +556,7 @@
         }
     }
 
-    // 创建用户卡片
+    // 创建用户卡片 5e
     function createUserCard(userData) {
         const template = document.getElementById('userCardTemplate');
         const card = document.importNode(template.content, true).querySelector('.user-card');
@@ -565,7 +627,7 @@
             const steamData = await get_steamData(steamId);
 
             // 获取完美平台信息
-            const perfectUserInfo = await searchUsers(steamId);
+            const perfectUserInfo = await searchUsers(steamId)[0];
             const PVPIfon = await getAccountMatches(steamId)
             const [csInfo, officialInfo,PvPStats, perfectAccountStatus] = steamId ? await Promise.all([
                 getCsInfo(steamId),
@@ -787,7 +849,6 @@
         return card;
     }
 
-
     // 页面加载完成后初始化
     document.addEventListener('DOMContentLoaded', () => {
         var currentSearchMode = '5e';//初始搜索模式为5E接口
@@ -801,7 +862,9 @@
                 if (currentSearchMode === '5e') {
                     performSearch(keyword);
                 }if(currentSearchMode === 'perfect') {
-                    showCopyToast('接口暂时停用Q^Q','error','color: #9E9E9E;');//预留为完美搜索接口做保留
+                    //PerfectSearch(keyword);
+                    showMessage('接口暂时停用Q^Q,正在修复此问题');
+                    //showCopyToast('接口暂时停用Q^Q','error','color: #9E9E9E;');//预留为完美搜索接口做保留
                 }
             }
         });
@@ -814,6 +877,7 @@
                     if (currentSearchMode === '5e') {
                         performSearch(keyword);
                     }if(currentSearchMode === 'perfect') {
+                        //PerfectSearch(keyword);
                         showCopyToast('接口暂时停用Q^Q','error','color: #9E9E9E;');//预留为完美搜索接口做保留
                     }
                 }
