@@ -627,8 +627,8 @@
             const steamData = await get_steamData(steamId);
 
             // 获取完美平台信息
-            const perfectUserInfo = await searchUsers(steamId)[0];
-            const PVPIfon = await getAccountMatches(steamId)
+            const perfectUserInfo = await searchUsers(steamId);
+            const PVPIfon = await getAccountMatches(steamId);
             const [csInfo, officialInfo,PvPStats, perfectAccountStatus] = steamId ? await Promise.all([
                 getCsInfo(steamId),
                 getOfficialStats(steamId),
@@ -666,9 +666,9 @@
                 },
                 // 完美数据
                 perfectData: {
-                    pvpNickName: perfectUserInfo?.pvpNickName || '未知',
-                    appNickName: perfectUserInfo?.appNickName || '未知',
-                    pvpScore: perfectUserInfo?.pvpScore || '0',
+                    pvpNickName: perfectUserInfo[0]?.pvpNickName || '未知',
+                    appNickName: perfectUserInfo[0]?.appNickName || '未知',
+                    pvpScore: perfectUserInfo[0]?.pvpScore || '0',
                     csInfo: csInfo,
                     PvPStats:PvPStats || {},
                     maxPvpScore: maxPvpScore,
@@ -963,4 +963,5 @@
     });
 </script>
 </body>
+
 </html>
