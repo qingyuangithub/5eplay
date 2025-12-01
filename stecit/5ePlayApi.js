@@ -109,7 +109,15 @@ function get_macthlist(uuid){
     .then(response => response.json())
     .then(proxydata=> {
         if (proxydata && proxydata.data && proxydata.data.length > 0) {
-            return proxydata.data[0].match_id || null;
+            if (proxydata.code !== 500){
+                for (let i = 0; i < proxydata.data.length; i++) {
+                    if (proxydata.data[i].game_mode === "6" && "24") {
+                        return proxydata.data[i].match_id
+                    }else{
+                        continue
+                    }
+                }
+            }
         }
         return null;
     }).catch(error => {
