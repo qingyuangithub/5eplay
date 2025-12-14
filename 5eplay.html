@@ -99,7 +99,7 @@
             <input
                     type="text"
                     id="searchInput"
-                    placeholder="输入玩家5E昵称"
+                    placeholder="输入玩家昵称"
                     class="flex-1 px-4 py-3 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary transition-all"
             >
             <button
@@ -550,11 +550,17 @@
         searchProgressBar.style.width = '10%';
         searchStatus.classList.add('hidden');
         initialState.classList.add('hidden');
+        //完美搜索用户列表
+        // const searchPerfect = await searchUsers(keyword);
+        // if (!searchPerfect || searchPerfect.result.length === 0  || searchPerfect.result) {
+        //     searchStatus.textContent = '未找到匹配的用户';
+        //     searchStatus.classList.remove('hidden');
+        //     searchProgressBar.style.width = '100%';
+        // }
+        // const searchUserList = searchPerfect.result;//用户列表
+        // const totalUsers = searchUserList.length;//用户数量
 
         try {
-            if (currentSearchMode == "5e"){
-
-            }
             // 步骤 1: 只获取基础的用户列表
             const searchResult = await get_player(keyword);
             if (!searchResult || !searchResult.data?.user?.list || searchResult.data.user.list.length === 0) {
