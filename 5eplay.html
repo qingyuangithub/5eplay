@@ -552,9 +552,9 @@
         initialState.classList.add('hidden');
 
         try {
-            if (currentSearchMode == "5e"){
+            // if (currentSearchMode == "5e"){
 
-            }
+            // }
             // 步骤 1: 只获取基础的用户列表
             const searchResult = await get_player(keyword);
             if (!searchResult || !searchResult.data?.user?.list || searchResult.data.user.list.length === 0) {
@@ -1022,3 +1022,4 @@
 </script>
 </body>
 </html>
+
