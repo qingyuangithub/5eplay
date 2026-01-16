@@ -111,7 +111,7 @@ function get_macthlist(uuid){
         if (proxydata && proxydata.data && proxydata.data.length > 0) {
             if (proxydata.code !== 500){
                 for (let i = 0; i < proxydata.data.length; i++) {
-                    if (proxydata.data[i].game_mode === "6" && "24") {
+                    if (proxydata.data[i].game_mode === "6" && "24" && "103") {
                         return proxydata.data[i].match_id
                     }else{
                         continue
@@ -227,3 +227,4 @@ function convertTimestamp(timestamp) {
     year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
   });
 }
+
